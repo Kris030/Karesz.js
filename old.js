@@ -1,6 +1,6 @@
 
 //#region load
-const content = document.getElementById('content'), inpText = document.createElement('input');
+const content = document.getElementById('content'), inpText = document.createElement('input'), fileInp = document.createElement('input');
 inpText.type = 'text';
 inpText.name = 'palyaName';
 inpText.placeholder = 'palya.json';
@@ -9,6 +9,9 @@ inpText.style.borderRadius = '10px';
 inpText.style.padding = '3px';
 inpText.style.width = '100px';
 inpText.style.outline = 'none';
+
+fileInp.type = 'file';
+fileInp.name = 'palyaFile';
 
 let errored, sajt;
 const loadBeep = _ => {
@@ -25,15 +28,21 @@ const loadSajt = _ => {
 	sajt = true;
 	content.innerHTML = '';
 	let btn = document.createElement('button');
-	btn.innerText = 'Válassz ki fájlt';
-	btn.addEventListener('click', _ => inpText.click(), false);
+	btn.innerText = 'Válassz fájlt';
+	btn.addEventListener('click', _ => fileInp.click(), false);
 	content.appendChild(btn);
 };
 
 document.querySelector('#sajatpalya').addEventListener('change', loadSajt, false);
 document.querySelector('#beeppalya').addEventListener('change', loadBeep, false);
 
-const map = {}, loadMap = _ => {
+//#endregion load
+//#region game
+
+const map = {
+	width:  100,
+	height: 50
+}, loadMap = _ => {
 	let json;
 	if (sajt) {
 		let fr = new FileReader();
@@ -44,19 +53,30 @@ const map = {}, loadMap = _ => {
 	Object.assign(map, json);
 };
 
-//#endregion load
-//#region game
-
 let canvas;
-const startListener = _ => {
+const panelSize = 300, resize = _ => {
+    /*let minWidth = Math.min(window.innerWidth - panelSize, window.innerHeight);
+	if (map.width > map.height) {
+		canvas.width = minWidth;
+		canvas.height = map.height / map.width * minWidth;
+	} else {
+		canvas.height = minWidth;
+		canvas.width = map.width / map.height * minWidth;
+	}*/
+
+}, startListener = _ => {
 	try {
 		//loadMap();
 		document.body.innerHTML = '';
-		document.body.removeAttribute('style');
 		document.head.removeChild(document.getElementById('st'));
-		document.body.style = '*{background:red;}';
+		document.body.style.cssText = 'display:flex;flex-direction:row;padding:0;margin:0;background:linear-gradient(rgb(221,138,83),rgb(62,62,184))fixed;';
 		canvas = document.createElement('canvas');
+		canvas.style.display = 'block';
 		document.body.appendChild(canvas);
+		let div = document.createElement('div');
+		div.style.minWidth = panelSize + 'px';
+		document.body.appendChild(div);
+		window.addEventListener('resize', resize, false);
 	} catch (ex) {
 		console.error(ex);
 		if (!errored) {
