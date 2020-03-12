@@ -14,6 +14,6 @@ document.getElementById('h').addEventListener('click', _ => {
 document.getElementById('s').addEventListener('click', _ => {
 	window.location = 'szinkron';
 }, false);
-document.getElementById('o').addEventListener('click', _ => {
-	window.location = 'online';
+document.getElementById('e').addEventListener('click', _ => {
+	window.location = 'editor';
 }, false);

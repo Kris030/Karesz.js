@@ -1,5 +1,19 @@
 {
 	"width": 41,
 	"height": 31,
-	"objs": []
+	"objs": [
+		{"type": "Wall", "args": [10, 10]},
+		{"type": "Wall", "args": [11, 10]},
+		{"type": "Wall", "args": [12, 10]},
+		{"type": "Wall", "args": [13, 10]},
+		{"type": "Wall", "args": [14, 10]},
+		{"type": "Wall", "args": [15, 10]},
+		{"type": "Kavics", "args": [10, 11, "red"]},
+		{"type": "Kavics", "args": [11, 11, "blue"]},
+		{"type": "Kavics", "args": [12, 11, "green"]},
+		{"type": "Kavics", "args": [13, 11, "black"]},
+		{"type": "Kavics", "args": [14, 11, "yellow"]},
+		{"type": "Kavics", "args": [15, 11, "orange"]},
+		{"type": "Robot", "args": [0, 3, ["Karesz0.png", "Karesz2.png", "Karesz3.png", "Karesz1.png"]]}
+	]
 }

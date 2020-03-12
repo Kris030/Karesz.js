@@ -20,7 +20,7 @@ types = {
 			break;
 		case 'old':
 		case 'szinkron':
-		case 'online':
+		case 'editor':
 			parsURL += '.html';
 			break;
 		default:
