@@ -40,13 +40,15 @@ document.querySelector('#beeppalya').addEventListener('change', loadBeep, false)
 //#region game
 
 let map;
-const loadMap = _ => {
+const pareseGameObject = (o) => new window[o.type](...o.args), unparseGameObject = (o) => {
+	return {type: o.getClass(), args: o.asArgs()};
+}, loadMap = _ => {
 	if (sajt) {
 		let fr = new FileReader();
 		fr.readAsText(fileInp.files[0]);
 		fr.onload = (e) => {
 			let json = JSON.parse(e.target.result);
-			json.objs = json.objs.map((o) => new window[o.type](...o.args));
+			json.objs = json.objs.map(pareseGameObject);
 			map = json;
 			resize();
 		};
@@ -179,18 +181,26 @@ this.GameObject = class {
 
 	draw(g, gridSize) {}
 
+	asArgs() {
+		return [this.x, this.y];
+	}
+
 }
 
 this.Wall = class extends GameObject {
 
 	constructor(x, y, fill) {
 		super(x, y);
-		this.fill = fill;
+		this.fill = fill ? fill : 'darkred';
 	}
 
 	draw(g, gridSize) {
-		g.fillStyle = this.fill ? this.fill : 'darkred';
+		g.fillStyle = this.fill;
 		g.fillRect(this.x * gridSize + g.lineWidth, this.y * gridSize + g.lineWidth, gridSize - g.lineWidth * 2, gridSize - g.lineWidth * 2);
+	}
+	
+	asArgs() {
+		return [this.x, this.y, this.fill];
 	}
 
 }
@@ -199,14 +209,18 @@ this.Kavics = class extends GameObject {
 	
 	constructor(x, y, fill) {
 		super(x, y);
-		this.fill = fill;
+		this.fill = fill ? fill : 'black';
 	}
 
 	draw(g, gridSize) {
-		g.fillStyle = this.fill ? this.fill : 'black';
+		g.fillStyle = this.fill;
 		g.beginPath();
-		g.arc(this.x * gridSize + gridSize / 2, this.y * gridSize + gridSize / 2, gridSize / 2 - 1, 0, 2 * Math.PI);
+		g.arc(this.x * gridSize + gridSize / 2, this.y * gridSize + gridSize / 2, gridSize / 2, 0, 2 * Math.PI);
 		g.fill();
+	}
+
+	asArgs() {
+		return [this.x, this.y, this.fill];
 	}
 
 }
@@ -261,12 +275,18 @@ this.Movable = class extends GameObject {
 		}
 		drawGlobal();
 	}
+	
+	asArgs() {
+		return [this.x, this.y, this.facing.valueOf()];
+	}
+
 }
 
 this.Robot = class extends Movable {
 	
-	constructor(x, y, res, facing) {
+	constructor(name, x, y, res, facing) {
 		super(x, y, facing);
+		this.name = name;
 		this.res = res ? res.map(s => {
 			let img = new Image();
 			img.src = s;
@@ -292,6 +312,10 @@ this.Robot = class extends Movable {
 
 	Tegyél_le_egy_kavicsot(kavics) {
 
+	}
+
+	asArgs() {
+		return [this.name, this.x, this.y, this.res, this.facing.valueOf()];
 	}
 
 }

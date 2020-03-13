@@ -40,13 +40,14 @@ body div {
 	flex-direction: column;
 	width: fit-content;
 	justify-content: center;
-	padding: 10px;
+	padding: 20px;
 }
 
 #karikep {
 	width: fit-content;
 	height: fit-content;
 	margin: 0 auto;
+	padding-bottom: 10px;
 }
 
 footer {

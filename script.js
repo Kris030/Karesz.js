@@ -17,3 +17,6 @@ document.getElementById('s').addEventListener('click', _ => {
 document.getElementById('e').addEventListener('click', _ => {
 	window.location = 'editor';
 }, false);
+document.getElementById('l').addEventListener('click', _ => {
+	window.location = 'lore';
+}, false);
