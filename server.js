@@ -1,13 +1,20 @@
+
 const http = require('http'), url = require('url'), fs = require('fs'), port = 9000,
 types = {
     'ico': 'image/x-icon', 'html': 'text/html', 'js': 'text/javascript',
 	'json': 'application/json', 'css': 'text/css', 'png': 'image/png',
 	'jpg': 'image/jpeg', 'wav': 'audio/wav', 'mp3': 'audio/mpeg',
-    				'pdf': 'application/pdf'
+    'pdf': 'application/pdf'
 }, requestListener = (req, res) => {
 	switch (req.method) {
 	case 'GET':
 		let parsURL = url.parse(req.url, true).pathname.substring(1);
+		
+		if (parsURL.startsWith('map--')) {
+			res.writeHead(200, {"Content-Type": "text/html"});
+			fs.createReadStream('palyak/' + parsURL.substring(5)).pipe(res);
+			return;
+		}
 		switch (parsURL) {
 		case '':
 			parsURL = 'index.html';

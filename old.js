@@ -14,51 +14,117 @@ fileInp.type = 'file';
 fileInp.name = 'palyaFile';
 
 let errored, sajt;
-const loadBeep = _ => {
-	errored = false;
-	sajt = false;
+const loadBeep = () => {
+	errored = sajt =false;
 	content.innerHTML = '';
 	content.appendChild(inpText);
 }
 
 loadBeep();
 
-const loadSajt = _ => {
+const loadSajt = () => {
 	errored = false;
 	sajt = true;
 	content.innerHTML = '';
 	let btn = document.createElement('button');
 	btn.innerText = 'Válassz fájlt';
-	btn.addEventListener('click', _ => fileInp.click(), false);
+	btn.addEventListener('click', () => fileInp.click(), false);
 	content.appendChild(btn);
+}, loadEmpty = () => {
+	/* TODO
+	function setInputFilter(textbox, inputFilter) {
+		["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function(event) {
+			textbox.addEventListener(event, function() {
+			if (inputFilter(this.value)) {
+				this.oldValue = this.value;
+				this.oldSelectionStart = this.selectionStart;
+				this.oldSelectionEnd = this.selectionEnd;
+			} else if (this.hasOwnProperty("oldValue")) {
+				this.value = this.oldValue;
+				this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+			} else {
+				this.value = "";
+			}
+			});
+		});
+	}
+	setInputFilter(inp, (value) => {
+		if (value.includes('.'))
+			return false;
+		let n = new Number(value);
+		return n % 1 == 0 && n > 0;
+	})
+	*/
+	sajt = errored = false;
+	content.innerHTML = '';
+
+	let pW = document.createElement('p');
+	pW.innerText = 'Szélesség';
+	content.appendChild(pW);
+
+	let wIn = document.createElement('input');
+	wIn.type = 'text';
+	wIn.name = 'widthIn';
+	wIn.placeholder = '0';
+	wIn.style.border = '2px solid grey';
+	wIn.style.borderRadius = '10px';
+	wIn.style.padding = '3px';
+	wIn.style.width = '60px';
+	wIn.style.outline = 'none';
+	content.appendChild(wIn);
+
+	let pH = document.createElement('p');
+	pH.innerText = 'Szélesség';
+	content.appendChild(pH);
+
+	let hIn = document.createElement('input');
+	hIn.type = 'text';
+	hIn.name = 'heighthIn';
+	hIn.placeholder = '0';
+	hIn.style.border = '2px solid grey';
+	hIn.style.borderRadius = '10px';
+	hIn.style.padding = '3px';
+	hIn.style.width = '60px';
+	hIn.style.outline = 'none';
+	content.appendChild(hIn);
+
 };
 
 document.querySelector('#sajatpalya').addEventListener('change', loadSajt, false);
 document.querySelector('#beeppalya').addEventListener('change', loadBeep, false);
+document.querySelector('#ures').addEventListener('change', loadEmpty, false);
 
 //#endregion load
 //#region game
 
 let map;
-const pareseGameObject = (o) => new window[o.type](...o.args), unparseGameObject = (o) => {
+const parseGameObject = (o) => new window[o.type](...o.args), unparseGameObject = (o) => {
 	return {type: o.getClass(), args: o.asArgs()};
-}, loadMap = _ => {
+}, loadMap = async () => {
 	if (sajt) {
 		let fr = new FileReader();
 		fr.readAsText(fileInp.files[0]);
 		fr.onload = (e) => {
 			let json = JSON.parse(e.target.result);
-			json.objs = json.objs.map(pareseGameObject);
+			json.objs = json.objs.map(parseGameObject);
 			map = json;
+			map.robotok = map.objs.filter(o => o instanceof Robot);
+			map.loadResult = eval(map.onload);
 			resize();
 		};
 		fr.onerror = _ => { throw new Error("Couldn't read file") };
+	} else {
+		let json = await (await fetch('map--' + inpText.value)).json();
+		json.objs = json.objs.map(parseGameObject);
+		map = json;
+		map.robotok = map.objs.filter(o => o instanceof Robot);
+		map.loadResult = eval(map.onload);
+		resize();
 	}
 };
 
 let canvas, panel, ctx;
-const panelSize = 300, drawGlobal = _ => {
-	//canvas = document.createElement('canvas');
+const panelSize = 300, drawGlobal = () => {
 	ctx = canvas.getContext('2d');
 	let gridSize = canvas.clientWidth / map.width;
 	ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
@@ -79,12 +145,14 @@ const panelSize = 300, drawGlobal = _ => {
 
 	let w = window.innerWidth - panelSize, h = map.height / map.width * w;
 	
-	if (h > document.body.clientHeight) {
+	if (h > window.innerHeight) {
 		h = window.innerHeight;
 		w = map.width / map.height * h;
-		panel.style.width = window.innerWidth - w - 1 + 'px';
+		panel.style.width = window.innerWidth - w + 'px';
+		panel.style.borderBottom = '';
+		canvas.style.borderBottom = '';
 	} else
-		panel.style.width = panelSize - 1 + 'px';
+		panel.style.width = panelSize + 'px';
 	panel.style.left = w + 'px';
 	panel.style.top = '0px'; panel.style.height = h + 'px';
 
@@ -92,13 +160,13 @@ const panelSize = 300, drawGlobal = _ => {
 	canvas.width = w; canvas.height = h;
 
 	drawGlobal();
-}, startListener = _ => {
+}, startListener = () => {
 	try {
 		loadMap();
 		document.body.innerHTML = '';
 		document.head.removeChild(document.getElementById('st'));
 		document.body.style.cssText =
-'display:block;padding:0;margin:0;background:linear-gradient(rgb(221,138,83),rgb(62,62,184))fixed;width:100vw;height:100vh;';
+'display:block;padding:0;margin:0;background:rgb(79,79,79);width:100vw;height:100vh;';
 
 		canvas = document.createElement('canvas');
 		canvas.style.cssText =
@@ -132,7 +200,6 @@ document.querySelector('#startButton').addEventListener('click', startListener, 
 //#endregion game
 
 //#region classes / classic
-
 const fel = {
 	ellenkező: undefined, valueOf() {
 		return 1;
@@ -162,8 +229,14 @@ const jobbra = {
 };
 jobbra.ellenkező = balra;
 
-const irány = function(value) {
+const irány = (value) => {
 	switch (value) {
+		case le:
+		case fel:
+		case jobbra:
+		case balra:
+			return value;
+		
 		case fel.valueOf(): return fel;
 		case le.valueOf(): return le;
 		case jobbra.valueOf(): return jobbra;
@@ -185,6 +258,14 @@ this.GameObject = class {
 		return [this.x, this.y];
 	}
 
+	toString() {
+		return `GameObject[x: ${this.x}, y: ${this.y}]`;
+	}
+
+	getClass() {
+		return 'GameObject';
+	}
+
 }
 
 this.Wall = class extends GameObject {
@@ -201,6 +282,14 @@ this.Wall = class extends GameObject {
 	
 	asArgs() {
 		return [this.x, this.y, this.fill];
+	}
+
+	toString() {
+		return `Wall[x: ${this.x}, y: ${this.y}, fill: ${this.fill}]`;
+	}
+
+	getClass() {
+		return 'Wall';
 	}
 
 }
@@ -223,27 +312,25 @@ this.Kavics = class extends GameObject {
 		return [this.x, this.y, this.fill];
 	}
 
+	toString() {
+		return `Kavics[x: ${this.x}, y: ${this.y}, fill: ${this.fill}]`;
+	}
+
+	getClass() {
+		return 'Kavics';
+	}
+
 }
 
 this.Movable = class extends GameObject {
 
 	constructor(x, y, facing) {
 		super(x, y);
-		this.facing = facing ? facing : fel;
-	}
-
-	move() {
-		switch (this.facing) {
-			case fel: this.y--; break;
-			case le: this.y++; break;
-			case jobbra: this.x++; break;
-			case balra: this.x--; break;
-			default: break;
-		}
-		drawGlobal();
+		this.facing = facing ? irány(facing) : fel;
 	}
 
 	move(speed) {
+		speed = speed || 1; 
 		switch (this.facing) {
 			case fel: this.y -= speed; break;
 			case le: this.y += speed; break;
@@ -254,12 +341,28 @@ this.Movable = class extends GameObject {
 		drawGlobal();
 	}
 
+	turn(irány) {
+		if (irány == balra || irány == balra.valueOf())
+			this.turnLeft();
+		else if (irány == jobbra || irány == jobbra.valueOf())
+			this.turnRight();
+	}
+
 	turnLeft() {
 		switch (this.facing) {
+
+			case fel.valueOf():
 			case fel: this.facing = jobbra; break;
+
+			case le.valueOf():
 			case le: this.facing = balra; break;
+			
+			case jobbra.valueOf():
 			case jobbra: this.facing = le; break;
+			
+			case balra.valueOf():
 			case balra: this.facing = fel; break;
+
 			default: break;
 		}
 		drawGlobal();
@@ -267,10 +370,19 @@ this.Movable = class extends GameObject {
 
 	turnRight() {
 		switch (this.facing) {
+
+			case fel.valueOf():
 			case fel: this.facing = balra; break;
+			
+			case le.valueOf():
 			case le: this.facing = jobbra; break;
+
+			case jobbra.valueOf():
 			case jobbra: this.facing = fel; break;
+
+			case balra.valueOf():
 			case balra: this.facing = le; break;
+
 			default: break;
 		}
 		drawGlobal();
@@ -280,10 +392,18 @@ this.Movable = class extends GameObject {
 		return [this.x, this.y, this.facing.valueOf()];
 	}
 
+	toString() {
+		return `Movable[x: ${this.x}, y: ${this.y}, facing: ${this.facing.toString()}]`;
+	}
+
+	getClass() {
+		return 'Movable';
+	}
+
 }
 
 this.Robot = class extends Movable {
-	
+
 	constructor(name, x, y, res, facing) {
 		super(x, y, facing);
 		this.name = name;
@@ -302,6 +422,10 @@ this.Robot = class extends Movable {
 		this.move();
 	}
 
+	Fordulj(irány) {
+		this.turn(irány);
+	}
+
 	Fordulj_jobbra() {
 		this.turnRight();
 	}
@@ -310,14 +434,82 @@ this.Robot = class extends Movable {
 		this.turnLeft();
 	}
 
-	Tegyél_le_egy_kavicsot(kavics) {
+	Merre_néz() {
+		return this.facing;
+	}
 
+	Mi_van_előttem() {
+		let előttemX;
+		switch (this.facing) {
+	
+			case jobbra.valueOf():
+			case jobbra: előttemX = this.x + 1; break;
+	
+			case balra.valueOf():
+			case balra: előttemX = this.x - 1; break;
+	
+			default: előttemX = this.x; break;
+		}
+		let előttemY;
+		switch (this.facing) {
+
+			case fel.valueOf():
+			case fel: előttemY = this.y - 1; break;
+	
+			case fel.valueOf():
+			case fel: előttemY = this.y + 1; break;
+	
+			default: előttemY = this.y; break;
+		}
+		return Keress(előttemX, előttemY);
+	}
+
+	Mi_van_alattam() {
+		let arr = KeressTömb(this.x, this.y);
+		return arrOr0(arr.splice(arr.indexOf(this), 1));
+	}
+
+	Tegyél_le_egy_kavicsot(szín) {
+		Adj_hozzá(new Kavics(this.x, this.y, szín));
 	}
 
 	asArgs() {
-		return [this.name, this.x, this.y, this.res, this.facing.valueOf()];
+		return [this.name, this.x, this.y, `["${this.res[0].src}","${this.res[1].src}","${this.res[2].src}","${this.res[3].src}"]`, this.facing.valueOf()];
+	}
+
+	toString() {
+		return `Robot[name: ${this.name}, x: ${this.x}, y: ${this.y}]`;
+	}
+
+	getClass() {
+		return 'Robot';
 	}
 
 }
+
+const arrOr0 = (arr) => {
+	switch (arr.length) {
+		case 0: return null;
+		case 1: return arr[0];
+		default: return arr;
+	}
+}, Adj_hozzá = o => {
+	map.objs.push(o);
+	if (o instanceof Robot)
+		map.robotok.push(o);
+	drawGlobal();
+}, Vedd_ki = o => {
+	let i1 = map.objs.indexOf(o);
+	if (i1 != -1)
+		map.objs.splice(i1, 1);
+	
+	if (o instanceof Robot) {
+		let i2 = map.robotok.indexOf(o);
+		if (i2 != -1)
+			map.robotok.splice(i2, 1);
+	}
+	drawGlobal();
+}, KeressTömb = (x, y) => map.objs.filter(o => o.x == x && o.y == y),
+Keress = (x, y) => arrOr0(KeressTömb(x, y));
 
 //#endregion classes / classic
