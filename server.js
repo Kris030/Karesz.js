@@ -19,8 +19,7 @@ types = {
 		case '':
 			parsURL = 'index.html';
 			break;
-		case 'old':
-		case 'szinkron':
+		case 'loc':
 		case 'editor':
 		case 'lore':
 			parsURL += '.html';

@@ -13,9 +13,10 @@ inpText.style.outline = 'none';
 fileInp.type = 'file';
 fileInp.name = 'palyaFile';
 
-let errored, sajt;
+let errored, mode;
 const loadBeep = () => {
-	errored = sajt =false;
+	errored = false;
+	mode = 0;
 	content.innerHTML = '';
 	content.appendChild(inpText);
 }
@@ -24,14 +25,50 @@ loadBeep();
 
 const loadSajt = () => {
 	errored = false;
-	sajt = true;
+	mode = 1;
 	content.innerHTML = '';
 	let btn = document.createElement('button');
 	btn.innerText = 'Válassz fájlt';
 	btn.addEventListener('click', () => fileInp.click(), false);
 	content.appendChild(btn);
-}, loadEmpty = () => {
-	/* TODO
+};
+let wIn, hIn;
+const loadEmpty = () => {
+	
+	errored = false;
+	mode = 2;
+	content.innerHTML = '';
+
+	let pW = document.createElement('p');
+	pW.innerText = 'Szélesség';
+	content.appendChild(pW);
+
+	wIn = document.createElement('input');
+	wIn.type = 'text';
+	wIn.name = 'widthIn';
+	wIn.placeholder = '0';
+	wIn.style.border = '2px solid grey';
+	wIn.style.borderRadius = '10px';
+	wIn.style.padding = '3px';
+	wIn.style.width = '60px';
+	wIn.style.outline = 'none';
+	content.appendChild(wIn);
+
+	let pH = document.createElement('p');
+	pH.innerText = 'Hosszúság';
+	content.appendChild(pH);
+
+	hIn = document.createElement('input');
+	hIn.type = 'text';
+	hIn.name = 'heighthIn';
+	hIn.placeholder = '0';
+	hIn.style.border = '2px solid grey';
+	hIn.style.borderRadius = '10px';
+	hIn.style.padding = '3px';
+	hIn.style.width = '60px';
+	hIn.style.outline = 'none';
+	content.appendChild(hIn);
+
 	function setInputFilter(textbox, inputFilter) {
 		["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function(event) {
 			textbox.addEventListener(event, function() {
@@ -48,46 +85,14 @@ const loadSajt = () => {
 			});
 		});
 	}
-	setInputFilter(inp, (value) => {
+	let meth = value => {
 		if (value.includes('.'))
 			return false;
 		let n = new Number(value);
 		return n % 1 == 0 && n > 0;
-	})
-	*/
-	sajt = errored = false;
-	content.innerHTML = '';
-
-	let pW = document.createElement('p');
-	pW.innerText = 'Szélesség';
-	content.appendChild(pW);
-
-	let wIn = document.createElement('input');
-	wIn.type = 'text';
-	wIn.name = 'widthIn';
-	wIn.placeholder = '0';
-	wIn.style.border = '2px solid grey';
-	wIn.style.borderRadius = '10px';
-	wIn.style.padding = '3px';
-	wIn.style.width = '60px';
-	wIn.style.outline = 'none';
-	content.appendChild(wIn);
-
-	let pH = document.createElement('p');
-	pH.innerText = 'Szélesség';
-	content.appendChild(pH);
-
-	let hIn = document.createElement('input');
-	hIn.type = 'text';
-	hIn.name = 'heighthIn';
-	hIn.placeholder = '0';
-	hIn.style.border = '2px solid grey';
-	hIn.style.borderRadius = '10px';
-	hIn.style.padding = '3px';
-	hIn.style.width = '60px';
-	hIn.style.outline = 'none';
-	content.appendChild(hIn);
-
+	};
+	setInputFilter(wIn, meth);
+	setInputFilter(hIn, meth);
 };
 
 document.querySelector('#sajatpalya').addEventListener('change', loadSajt, false);
@@ -101,25 +106,27 @@ let map;
 const parseGameObject = (o) => new window[o.type](...o.args), unparseGameObject = (o) => {
 	return {type: o.getClass(), args: o.asArgs()};
 }, loadMap = async () => {
-	if (sajt) {
-		let fr = new FileReader();
-		fr.readAsText(fileInp.files[0]);
-		fr.onload = (e) => {
-			let json = JSON.parse(e.target.result);
+	switch (mode) {
+		case 0:
+		case 1:
+			let json = mode == 0 ? await (await fetch('map--' + inpText.value)).json() : JSON.parse(await new Response(fileInp.files[0]).text());
 			json.objs = json.objs.map(parseGameObject);
 			map = json;
 			map.robotok = map.objs.filter(o => o instanceof Robot);
 			map.loadResult = eval(map.onload);
-			resize();
-		};
-		fr.onerror = _ => { throw new Error("Couldn't read file") };
-	} else {
-		let json = await (await fetch('map--' + inpText.value)).json();
-		json.objs = json.objs.map(parseGameObject);
-		map = json;
-		map.robotok = map.objs.filter(o => o instanceof Robot);
-		map.loadResult = eval(map.onload);
-		resize();
+			break;
+
+		case 2:
+			map = {
+				width: new Number(wIn.value),
+				height: new Number(hIn.value),
+				objs: [],
+				robotok: []
+			};
+			break;
+		
+		default:
+			break;
 	}
 };
 
@@ -141,7 +148,7 @@ const panelSize = 300, drawGlobal = () => {
 		ctx.stroke();
 	}
 	map.objs.forEach(o => o.draw(ctx, gridSize));
-}, resize = _ => {
+}, resize = () => {
 
 	let w = window.innerWidth - panelSize, h = map.height / map.width * w;
 	
@@ -160,9 +167,9 @@ const panelSize = 300, drawGlobal = () => {
 	canvas.width = w; canvas.height = h;
 
 	drawGlobal();
-}, startListener = () => {
+}, startListener = async () => {
 	try {
-		loadMap();
+		await loadMap();
 		document.body.innerHTML = '';
 		document.head.removeChild(document.getElementById('st'));
 		document.body.style.cssText =
@@ -195,6 +202,7 @@ const panelSize = 300, drawGlobal = () => {
 			errored = true;
 		}
 	}
+	resize();
 };
 document.querySelector('#startButton').addEventListener('click', startListener, false);
 //#endregion game
@@ -407,18 +415,27 @@ this.Robot = class extends Movable {
 	constructor(name, x, y, res, facing) {
 		super(x, y, facing);
 		this.name = name;
-		this.res = res ? res.map(s => {
+		/*this.res = res ? res.map(s => {
 			let img = new Image();
 			img.src = s;
 			return img;
-		}) : [];
+		}) : null;*/
+		if (res) { // TODO await load
+			Promise.all(res.map(path => new Promise((res, err) => {
+				const img = new Image();
+				img.addEventListener('load', () => res(img), false);
+				img.addEventListener('error', e => err(e), false);
+				img.src = path;
+			}))).then(imgs => this.res = imgs);
+		} else
+			this.res = [];
 	}
 
 	draw(g, gridSize) {
-		g.drawImage(this.res[this.facing.resIndex], this.x * gridSize, this.y * gridSize, gridSize, gridSize);
+		if (this.res) g.drawImage(this.res[this.facing.resIndex], this.x * gridSize, this.y * gridSize, gridSize, gridSize);
 	}
 
-	Lépj() {
+	Lépj() { 
 		this.move();
 	}
 
@@ -434,6 +451,20 @@ this.Robot = class extends Movable {
 		this.turnLeft();
 	}
 
+	Tegyél_le_egy_kavicsot(szín) {
+		Adj_hozzá(new Kavics(this.x, this.y, szín));
+	}
+	
+	Vegyél_fel_egy_kavicsot() {
+		// TODO kavics storage
+		let arr = KeressTömb(this.x, this.y);
+		for (let i = 0; i < arr.length; i++)
+			if (arr[i] instanceof Kavics) {
+				map.objs.splice(i, 1);
+				break;
+			}
+	}
+	
 	Merre_néz() {
 		return this.facing;
 	}
@@ -467,10 +498,6 @@ this.Robot = class extends Movable {
 	Mi_van_alattam() {
 		let arr = KeressTömb(this.x, this.y);
 		return arrOr0(arr.splice(arr.indexOf(this), 1));
-	}
-
-	Tegyél_le_egy_kavicsot(szín) {
-		Adj_hozzá(new Kavics(this.x, this.y, szín));
 	}
 
 	asArgs() {

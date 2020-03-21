@@ -7,12 +7,9 @@ clamp = (val, min, max) => {
 	else
 		return val;
 };
-div.addEventListener('mousemove', (e) => kep.style.marginTop = clamp(e.clientY - div.getBoundingClientRect().top - kep.clientHeight, -64, 50) + 'px', false);
+div.addEventListener('mousemove', e => kep.style.marginTop = clamp(e.clientY - div.getBoundingClientRect().top - kep.clientHeight, -64, 50) + 'px', false);
 document.getElementById('h').addEventListener('click', _ => {
-	window.location = 'old';
-}, false);
-document.getElementById('s').addEventListener('click', _ => {
-	window.location = 'szinkron';
+	window.location = 'loc';
 }, false);
 document.getElementById('e').addEventListener('click', _ => {
 	window.location = 'editor';
