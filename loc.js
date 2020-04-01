@@ -55,7 +55,7 @@ const loadEmpty = () => {
 	content.appendChild(wIn);
 
 	let pH = document.createElement('p');
-	pH.innerText = 'Hosszúság';
+	pH.innerText = 'Magasság';
 	content.appendChild(pH);
 
 	hIn = document.createElement('input');
@@ -69,6 +69,7 @@ const loadEmpty = () => {
 	hIn.style.outline = 'none';
 	content.appendChild(hIn);
 
+	// TODO cleanup
 	function setInputFilter(textbox, inputFilter) {
 		["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function(event) {
 			textbox.addEventListener(event, function() {
@@ -131,7 +132,7 @@ const parseGameObject = (o) => new window[o.type](...o.args), unparseGameObject 
 };
 
 let canvas, panel, ctx;
-const panelSize = 300, drawGlobal = () => {
+const panelSize = 300, drawGlobal = async () => {
 	ctx = canvas.getContext('2d');
 	let gridSize = canvas.clientWidth / map.width;
 	ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
@@ -207,7 +208,7 @@ const panelSize = 300, drawGlobal = () => {
 document.querySelector('#startButton').addEventListener('click', startListener, false);
 //#endregion game
 
-//#region classes / classic
+//#region classes
 const fel = {
 	ellenkező: undefined, valueOf() {
 		return 1;
@@ -412,7 +413,7 @@ this.Movable = class extends GameObject {
 
 this.Robot = class extends Movable {
 
-	constructor(name, x, y, res, facing) {
+	constructor(name, x, y, res, facing, round) {
 		super(x, y, facing);
 		this.name = name;
 		/*this.res = res ? res.map(s => {
@@ -420,7 +421,7 @@ this.Robot = class extends Movable {
 			img.src = s;
 			return img;
 		}) : null;*/
-		if (res) { // TODO await load
+		if (res) { // TODO createRobot()
 			Promise.all(res.map(path => new Promise((res, err) => {
 				const img = new Image();
 				img.addEventListener('load', () => res(img), false);
@@ -429,33 +430,42 @@ this.Robot = class extends Movable {
 			}))).then(imgs => this.res = imgs);
 		} else
 			this.res = [];
+		this.round = round || 0;
 	}
 
-	draw(g, gridSize) {
-		if (this.res) g.drawImage(this.res[this.facing.resIndex], this.x * gridSize, this.y * gridSize, gridSize, gridSize);
+	Befejez() {
+		this.finished = true;
 	}
 
-	Lépj() { 
+	//#region Time consuming
+
+	async Lépj() {
+		await awaitRoundEnd(this);
 		this.move();
 	}
 
-	Fordulj(irány) {
+	async Fordulj(irány) {
+		await awaitRoundEnd(this);
 		this.turn(irány);
 	}
 
-	Fordulj_jobbra() {
+	async Fordulj_jobbra() {
+		await awaitRoundEnd(this);
 		this.turnRight();
 	}
 
-	Fordulj_balra() {
+	async Fordulj_balra() {
+		await awaitRoundEnd(this);
 		this.turnLeft();
 	}
 
-	Tegyél_le_egy_kavicsot(szín) {
+	async Tegyél_le_egy_kavicsot(szín) {
+		await awaitRoundEnd(this);
 		Adj_hozzá(new Kavics(this.x, this.y, szín));
 	}
 	
-	Vegyél_fel_egy_kavicsot() {
+	async Vegyél_fel_egy_kavicsot() {
+		await awaitRoundEnd(this);
 		// TODO kavics storage
 		let arr = KeressTömb(this.x, this.y);
 		for (let i = 0; i < arr.length; i++)
@@ -464,7 +474,10 @@ this.Robot = class extends Movable {
 				break;
 			}
 	}
-	
+	//#endregion Time consuming
+
+	//#region Non time consuming
+
 	Merre_néz() {
 		return this.facing;
 	}
@@ -499,6 +512,13 @@ this.Robot = class extends Movable {
 		let arr = KeressTömb(this.x, this.y);
 		return arrOr0(arr.splice(arr.indexOf(this), 1));
 	}
+	//#endregion Non time consuming
+
+	//#region non player
+
+	draw(g, gridSize) {
+		if (this.res) g.drawImage(this.res[this.facing.resIndex], this.x * gridSize, this.y * gridSize, gridSize, gridSize);
+	}
 
 	asArgs() {
 		return [this.name, this.x, this.y, `["${this.res[0].src}","${this.res[1].src}","${this.res[2].src}","${this.res[3].src}"]`, this.facing.valueOf()];
@@ -511,32 +531,91 @@ this.Robot = class extends Movable {
 	getClass() {
 		return 'Robot';
 	}
+	//#endregion non player
 
 }
+//#endregion classes
 
-const arrOr0 = (arr) => {
+const roundHandler = {
+	
+	kör: 0, waits: 0,
+	első: Date.now(),
+	length: 500,
+	i: 0,
+	nr: null,
+
+	next() {
+		this.i++;
+		console.log('i: ' + this.i);
+		if (this.i == map.robotok.length) {
+			this.i = 0;
+			this.kör++;
+			//console.log('new round ' + this.kör);
+			let tempNr = this.nr;
+			this.nr = null;
+			return tempNr - Date.now();
+		}
+		//console.log(this.nr);
+		return (this.nr === null ? (this.nr = (this.első + (this.kör + 1) * this.length)) : this.nr) - Date.now();
+	}, wait() {
+		this.i++;
+		console.log('i: ' + this.i);
+		if (this.i == map.robotok.length) {
+			this.i = 0;
+			this.waits++;
+			//console.log('waiting ' + waits);
+			let tempNr = this.nr;
+			this.nr = null;
+			return tempNr - Date.now();
+		}
+		//console.log(this.nr);
+		return (this.nr === null ? (this.nr = (this.első + (this.kör + this.waits + 1) * this.length)) : this.nr) - Date.now();
+	}
+
+};
+
+//#region global
+const sleep = async ms => {
+	if (ms < 1)
+		return;
+	await new Promise(res => setTimeout(res, ms));
+}, awaitRoundEnd = async r => {
+	let a = roundHandler.next();
+	console.log(`[${r.name}] sleeping ${a} ms`);
+	await sleep(a);
+	while (map.robotok.some(o => o !== r && !o.finished && o.round < r.round)) {
+		let b = roundHandler.wait();
+		console.log(`[${r.name}] waiting ${b} ms`);
+		await sleep(b);
+	}
+	r.round++;
+	roundHandler.waits = 0;
+}, arrOr0 = arr => {
 	switch (arr.length) {
 		case 0: return null;
 		case 1: return arr[0];
 		default: return arr;
 	}
 }, Adj_hozzá = o => {
+	if (map.objs.indexOf(o) != -1)
+		return;
 	map.objs.push(o);
 	if (o instanceof Robot)
 		map.robotok.push(o);
 	drawGlobal();
+	return o;
 }, Vedd_ki = o => {
 	let i1 = map.objs.indexOf(o);
-	if (i1 != -1)
+	if (i1 != -1) {
 		map.objs.splice(i1, 1);
-	
-	if (o instanceof Robot) {
-		let i2 = map.robotok.indexOf(o);
-		if (i2 != -1)
-			map.robotok.splice(i2, 1);
+		if (o instanceof Robot) {
+			let i2 = map.robotok.indexOf(o);
+			if (i2 != -1)
+				map.robotok.splice(i2, 1);
+		}
+		drawGlobal();
+		return o;
 	}
-	drawGlobal();
-}, KeressTömb = (x, y) => map.objs.filter(o => o.x == x && o.y == y),
-Keress = (x, y) => arrOr0(KeressTömb(x, y));
-
-//#endregion classes / classic
+	return null;
+}, KeressTömb = (x, y) => map.objs.filter(o => o.x == x && o.y == y), Keress = (x, y) => arrOr0(KeressTömb(x, y));
+//#endregion global

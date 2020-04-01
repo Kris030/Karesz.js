@@ -4,13 +4,18 @@
 	font-family: 'Raleway', sans-serif;
 }
 
+:root {
+	--grey: rgb(78, 78, 78);
+	--backg: linear-gradient(rgb(221, 138, 83), rgb(62, 62, 184)) fixed;
+}
+
 ::selection {
 	background: white;
 	color: brown;
 }
 
 body {
-	background: linear-gradient(rgb(221, 138, 83), rgb(62, 62, 184)) fixed;
+	background: var(--backg);
 	width: 100%;
 	height: 100%;
 	text-align: center;
@@ -25,15 +30,15 @@ h2 {
 }
 
 #mainDiv {
-	background-color: rgb(78, 78, 78);
+	background-color: var(--grey);
 	display: flex;
 	flex-direction: column;
 	padding-top: 30px;
 	padding-bottom: 30px;
 	margin: 0 auto;
 	margin-top: 1cm;
-	background-color: rgb(78, 78, 78);
-	border: 3px solid rgb(78, 78, 78);
+	background-color: var(--grey);
+	border: 3px solid var(--grey);
 	border-radius: 15px;
 	max-width: 50%;
 	color: rgb(181, 185, 189);
