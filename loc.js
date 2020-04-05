@@ -80,9 +80,8 @@ const loadEmpty = () => {
 			} else if (this.hasOwnProperty("oldValue")) {
 				this.value = this.oldValue;
 				this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-			} else {
+			} else
 				this.value = "";
-			}
 			});
 		});
 	}
@@ -96,15 +95,15 @@ const loadEmpty = () => {
 	setInputFilter(hIn, meth);
 };
 
-document.querySelector('#sajatpalya').addEventListener('change', loadSajt, false);
-document.querySelector('#beeppalya').addEventListener('change', loadBeep, false);
-document.querySelector('#ures').addEventListener('change', loadEmpty, false);
+document.getElementById('sajatpalya').addEventListener('change', loadSajt, false);
+document.getElementById('beeppalya').addEventListener('change', loadBeep, false);
+document.getElementById('ures').addEventListener('change', loadEmpty, false);
 
 //#endregion load
 //#region game
 
 let map;
-const parseGameObject = (o) => new window[o.type](...o.args), unparseGameObject = (o) => {
+const parseGameObject = o => new window[o.type](...o.args), unparseGameObject = o => {
 	return {type: o.getClass(), args: o.asArgs()};
 }, loadMap = async () => {
 	switch (mode) {
@@ -411,25 +410,20 @@ this.Movable = class extends GameObject {
 
 }
 
+const createRobot = async (name, x, y, res, facing, round) =>
+	new Robot(name, x, y, await Promise.all(res.map(path => new Promise((res, err) => {
+		const img = new Image();
+		img.addEventListener('load', () => res(img), false);
+		img.addEventListener('error', e => err(e), false);
+		img.src = path;
+	}))), facing, round);
+
 this.Robot = class extends Movable {
 
 	constructor(name, x, y, res, facing, round) {
 		super(x, y, facing);
+		this.res = res;
 		this.name = name;
-		/*this.res = res ? res.map(s => {
-			let img = new Image();
-			img.src = s;
-			return img;
-		}) : null;*/
-		if (res) { // TODO createRobot()
-			Promise.all(res.map(path => new Promise((res, err) => {
-				const img = new Image();
-				img.addEventListener('load', () => res(img), false);
-				img.addEventListener('error', e => err(e), false);
-				img.src = path;
-			}))).then(imgs => this.res = imgs);
-		} else
-			this.res = [];
 		this.round = round || 0;
 	}
 
@@ -437,35 +431,43 @@ this.Robot = class extends Movable {
 		this.finished = true;
 	}
 
+	async handleRoundEnd() {
+		await awaitRoundEnd(this);
+	}
+
 	//#region Time consuming
 
+	async Várd_meg_a_kör_végét() {
+		await this.handleRoundEnd();
+	}
+
 	async Lépj() {
-		await awaitRoundEnd(this);
+		await this.handleRoundEnd();
 		this.move();
 	}
 
 	async Fordulj(irány) {
-		await awaitRoundEnd(this);
+		await this.handleRoundEnd();
 		this.turn(irány);
 	}
 
 	async Fordulj_jobbra() {
-		await awaitRoundEnd(this);
+		await this.handleRoundEnd();
 		this.turnRight();
 	}
 
 	async Fordulj_balra() {
-		await awaitRoundEnd(this);
+		await this.handleRoundEnd();
 		this.turnLeft();
 	}
 
 	async Tegyél_le_egy_kavicsot(szín) {
-		await awaitRoundEnd(this);
+		await this.handleRoundEnd();
 		Adj_hozzá(new Kavics(this.x, this.y, szín));
 	}
 	
 	async Vegyél_fel_egy_kavicsot() {
-		await awaitRoundEnd(this);
+		await this.handleRoundEnd();
 		// TODO kavics storage
 		let arr = KeressTömb(this.x, this.y);
 		for (let i = 0; i < arr.length; i++)
@@ -539,41 +541,33 @@ this.Robot = class extends Movable {
 const roundHandler = {
 	
 	kör: 0, waits: 0,
-	első: Date.now(),
-	length: 500,
-	i: 0,
-	nr: null,
+	első: 0, length: 500,
+	i: 0, nr: null,
 
 	next() {
 		this.i++;
-		console.log('i: ' + this.i);
 		if (this.i == map.robotok.length) {
 			this.i = 0;
 			this.kör++;
-			//console.log('new round ' + this.kör);
 			let tempNr = this.nr;
 			this.nr = null;
 			return tempNr - Date.now();
 		}
-		//console.log(this.nr);
 		return (this.nr === null ? (this.nr = (this.első + (this.kör + 1) * this.length)) : this.nr) - Date.now();
 	}, wait() {
 		this.i++;
-		console.log('i: ' + this.i);
 		if (this.i == map.robotok.length) {
 			this.i = 0;
 			this.waits++;
-			//console.log('waiting ' + waits);
 			let tempNr = this.nr;
 			this.nr = null;
 			return tempNr - Date.now();
 		}
-		//console.log(this.nr);
 		return (this.nr === null ? (this.nr = (this.első + (this.kör + this.waits + 1) * this.length)) : this.nr) - Date.now();
 	}
 
 };
-
+let plus = 0;
 //#region global
 const sleep = async ms => {
 	if (ms < 1)
