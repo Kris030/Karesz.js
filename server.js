@@ -11,8 +11,14 @@ types = {
 		let parsURL = url.parse(req.url, true).pathname.substring(1);
 		
 		if (parsURL.startsWith('map--')) {
+			let p = `palyak/${parsURL.substring(5)}.json`;
+			if (!fs.existsSync(p)) {
+				res.writeHead(404, {"Content-Type": "text/html"});
+				fs.createReadStream('404.html').pipe(res);
+				return;
+			}
 			res.writeHead(200, {"Content-Type": "text/html"});
-			fs.createReadStream('palyak/' + parsURL.substring(5)).pipe(res);
+			fs.createReadStream(p).pipe(res);
 			return;
 		}
 		switch (parsURL) {

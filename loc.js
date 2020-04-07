@@ -1,14 +1,10 @@
 
 //#region load
 const content = document.getElementById('content'), inpText = document.createElement('input'), fileInp = document.createElement('input');
+inpText.style.cssText = 'border:2px solid grey;border-radius:10px;padding:3px;width:100px;outline:none;';
 inpText.type = 'text';
 inpText.name = 'palyaName';
 inpText.placeholder = 'palya.json';
-inpText.style.border = '2px solid grey';
-inpText.style.borderRadius = '10px';
-inpText.style.padding = '3px';
-inpText.style.width = '100px';
-inpText.style.outline = 'none';
 
 fileInp.type = 'file';
 fileInp.name = 'palyaFile';
@@ -29,7 +25,7 @@ const loadSajt = () => {
 	content.innerHTML = '';
 	let btn = document.createElement('button');
 	btn.innerText = 'Válassz fájlt';
-	btn.addEventListener('click', () => fileInp.click(), false);
+	btn.addEventListener('click', fileInp.click, false);
 	content.appendChild(btn);
 };
 let wIn, hIn;
@@ -85,10 +81,10 @@ const loadEmpty = () => {
 			});
 		});
 	}
-	let meth = value => {
-		if (value.includes('.'))
+	let meth = v => {
+		if (v.includes('.'))
 			return false;
-		let n = new Number(value);
+		let n = new Number(v);
 		return n % 1 == 0 && n > 0;
 	};
 	setInputFilter(wIn, meth);
@@ -103,14 +99,13 @@ document.getElementById('ures').addEventListener('change', loadEmpty, false);
 //#region game
 
 let map;
-const parseGameObject = o => new window[o.type](...o.args), unparseGameObject = o => {
-	return {type: o.getClass(), args: o.asArgs()};
-}, loadMap = async () => {
+const parseGameObject = o => new window[o.type](...o.args), unparseGameObject = o => ({type: o.getClass(), args: o.asArgs()}),
+loadMap = async () => {
 	switch (mode) {
 		case 0:
 		case 1:
 			let json = mode == 0 ? await (await fetch('map--' + inpText.value)).json() : JSON.parse(await new Response(fileInp.files[0]).text());
-			json.objs = json.objs.map(parseGameObject);
+			json.objs = await Promise.all(json.objs.map(parseGameObject));
 			map = json;
 			map.robotok = map.objs.filter(o => o instanceof Robot);
 			map.loadResult = eval(map.onload);
@@ -130,11 +125,13 @@ const parseGameObject = o => new window[o.type](...o.args), unparseGameObject = 
 	}
 };
 
-let canvas, panel, ctx;
-const panelSize = 300, drawGlobal = async () => {
+let canvas, panel, ctx, kiválaszott, viwer, pctx, prt;
+const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 	ctx = canvas.getContext('2d');
 	let gridSize = canvas.clientWidth / map.width;
 	ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+	ctx.lineWidth = 1;
+	ctx.strokeStyle = 'black';
 	for (let i = 1; i < map.width; i++) {
 		ctx.beginPath(); let xx = i * gridSize;
 		ctx.moveTo(xx, 0);
@@ -148,18 +145,26 @@ const panelSize = 300, drawGlobal = async () => {
 		ctx.stroke();
 	}
 	map.objs.forEach(o => o.draw(ctx, gridSize));
+	if (kiválaszott) {
+		ctx.strokeStyle = 'orange';
+		ctx.lineWidth = gridSize * .04;
+		ctx.strokeRect(kiválaszott.x * gridSize, kiválaszott.y * gridSize, gridSize, gridSize);
+	}
+	setSelJSON();
 }, resize = () => {
 
-	let w = window.innerWidth - panelSize, h = map.height / map.width * w;
-	
+	let oldW = canvas.width, w = window.innerWidth - panelSize, h = map.height / map.width * w;
+
 	if (h > window.innerHeight) {
 		h = window.innerHeight;
 		w = map.width / map.height * h;
+		if (oldW == w)
+			return;
 		panel.style.width = window.innerWidth - w + 'px';
-		panel.style.borderBottom = '';
-		canvas.style.borderBottom = '';
 	} else
 		panel.style.width = panelSize + 'px';
+	if (oldW == w)
+		return;
 	panel.style.left = w + 'px';
 	panel.style.top = '0px'; panel.style.height = h + 'px';
 
@@ -167,28 +172,103 @@ const panelSize = 300, drawGlobal = async () => {
 	canvas.width = w; canvas.height = h;
 
 	drawGlobal();
+}, setSelJSON = () => {
+	pctx.setTransform(1, 0, 0, 1, 0, 0);
+	pctx.fillStyle = 'gray';
+	pctx.fillRect(0, 0, prt.width, prt.width);
+	if (kiválaszott) {
+		let str = JSON.stringify(kiválaszott, (key, val)=>key=='facing'?val.toString():val, 2), arr = str.split('\n'), max = 0;
+		arr.forEach(e=>{if(e.length>max)max=e.length;});
+		viwer.rows = arr.length;
+		viwer.cols = Math.min(max, 37);
+		viwer.value = str;
+		let gs = -prt.width;
+		pctx.translate(gs * kiválaszott.x, gs * kiválaszott.y);
+		kiválaszott.draw(pctx, prt.width);
+	} else {
+		viwer.value = noEl;
+		viwer.rows = 1;
+		viwer.cols = noEl.length;
+		return;
+	}
 }, startListener = async () => {
 	try {
 		await loadMap();
-		document.body.innerHTML = '';
+		
+		document.documentElement.style.setProperty('--backg', 'rgb(79,79,79)');
+
 		document.head.removeChild(document.getElementById('st'));
-		document.body.style.cssText =
-'display:block;padding:0;margin:0;background:rgb(79,79,79);width:100vw;height:100vh;';
+		document.body.innerHTML = `
+		<style>
+			body {
+				display:block;
+				padding:0; margin:0;
+				background:var(--backg);
+				width:100vw; height:100vh;
+				overflow:hidden;
+			}
+			::selection{color: red; background: white;}
+			</style>
+		<div id="panel" style="display:flex;justify-content:space-between;flex-direction:column;width:300px;position:absolute;">
+			<div style="padding:10px 0 10px 10px;display:flex;flex-direction:column;min-width:${panelSize}px;">
+				<h1 style="color:darkgoldenrod;" id="map-name">Map Name</h1>
+				<div style="color:burlywood;font-size:1.5em; margin-left: 8px" id="selected">
+					<h3>Selected Object</h3>
+					<p id="sel-type">Type: -</p>
+					<canvas id="portrait" width="50px" height="50px" style="border:2px solid sandybrown;border-radius:4px;"></canvas>
+					<p>View JSON</p>
+					<textarea id="JSON-viewer" style="caret-color:white;background:grey;color:burlywood;border:2px solid sandybrown;border-radius:5px;outline:none;"><no element here></textarea>
+				</div>
+			</div>
+			<img src="start.png" id="st-button" style="padding:0;outline:none;background:none;width:fit-content;height:fit-content;margin:0 0 10px 10px;user-select:none;">
+		</div>`;
 
+		// Preload pause icon
+		new Image().src = 'pause.png';
+
+		panel = document.getElementById('panel');
 		canvas = document.createElement('canvas');
-		canvas.style.cssText =
-'position:absolute;display:block;background:white;border-right:solid 2px black;';
+		canvas.style.cssText = 'position:absolute;display:block;background:white;border-right:solid 2px black;';
 
-		panel = document.createElement('div');
-		panel.style.cssText =
-'position:absolute;min-width:' + panelSize + 'px;background:rgb(79,79,79);';
-
-		document.body.appendChild(panel);
+		viwer = document.getElementById('JSON-viewer');
+		prt = document.getElementById('portrait');
+		pctx = prt.getContext('2d')
+		
+		let selType = document.getElementById('sel-type');
+		
+        /*pctx.imageSmoothingEnabled = false;
+        pctx.webkitImageSmoothingEnabled = false;
+		pctx.mozImageSmoothingEnabled = false;*/
+		
+		pctx.fillStyle = 'gray';
+		pctx.fillRect(0, 0, prt.width, prt.width);
+		viwer.contentEditable = false;
+		viwer.spellcheck = false;
+		viwer.rows = 0;
+		viwer.cols = noEl.length;
+		canvas.addEventListener('click', e => {
+			let gridSize = canvas.width / map.width, oldKiv = kiválaszott, oldfac = oldKiv ? oldKiv.facing : null;
+			kiválaszott = Keress(e.clientX / gridSize, e.clientY / gridSize);
+			if (!kiválaszott) {
+				viwer.value = noEl;
+				viwer.rows = 1;
+				viwer.cols = noEl.length;
+				selType.innerText = 'Type: -';
+				if (kiválaszott !== oldKiv)
+					drawGlobal();
+				return;
+			}
+			selType.innerText = `Type: ${kiválaszott.getClass()}`;
+			if (kiválaszott !== oldKiv || kiválaszott.facing !== oldfac)
+				drawGlobal();
+		}, false);
 		document.body.appendChild(canvas);
 
-		let button = document.createElement('button');
-		button.innerText = 'click moi';
-		panel.appendChild(button);
+		let st = document.getElementById('st-button')
+		st.addEventListener('click', () => {
+			st.src = roundHandler.paused ? 'start.png' : 'pause.png';
+			roundHandler.paused = !roundHandler.paused;
+		}, false);
 
 		window.addEventListener('resize', resize, false);
 	} catch (ex) {
@@ -202,7 +282,7 @@ const panelSize = 300, drawGlobal = async () => {
 			errored = true;
 		}
 	}
-	resize();
+	setTimeout(resize, 0);
 };
 document.querySelector('#startButton').addEventListener('click', startListener, false);
 //#endregion game
@@ -237,7 +317,7 @@ const jobbra = {
 };
 jobbra.ellenkező = balra;
 
-const irány = (value) => {
+const irány = value => {
 	switch (value) {
 		case le:
 		case fel:
@@ -280,7 +360,7 @@ this.Wall = class extends GameObject {
 
 	constructor(x, y, fill) {
 		super(x, y);
-		this.fill = fill ? fill : 'darkred';
+		this.fill = fill || 'darkred';
 	}
 
 	draw(g, gridSize) {
@@ -306,7 +386,7 @@ this.Kavics = class extends GameObject {
 	
 	constructor(x, y, fill) {
 		super(x, y);
-		this.fill = fill ? fill : 'black';
+		this.fill = fill || 'black';
 	}
 
 	draw(g, gridSize) {
@@ -349,34 +429,14 @@ this.Movable = class extends GameObject {
 		drawGlobal();
 	}
 
-	turn(irány) {
-		if (irány == balra || irány == balra.valueOf())
+	turn(ir) {
+		if (irány == ir || irány == ir.valueOf())
 			this.turnLeft();
-		else if (irány == jobbra || irány == jobbra.valueOf())
+		else if (irány == ir || irány == ir.valueOf())
 			this.turnRight();
 	}
 
 	turnLeft() {
-		switch (this.facing) {
-
-			case fel.valueOf():
-			case fel: this.facing = jobbra; break;
-
-			case le.valueOf():
-			case le: this.facing = balra; break;
-			
-			case jobbra.valueOf():
-			case jobbra: this.facing = le; break;
-			
-			case balra.valueOf():
-			case balra: this.facing = fel; break;
-
-			default: break;
-		}
-		drawGlobal();
-	}
-
-	turnRight() {
 		switch (this.facing) {
 
 			case fel.valueOf():
@@ -390,6 +450,26 @@ this.Movable = class extends GameObject {
 
 			case balra.valueOf():
 			case balra: this.facing = le; break;
+
+			default: break;
+		}
+		drawGlobal();
+	}
+
+	turnRight() {
+		switch (this.facing) {
+
+			case fel.valueOf():
+			case fel: this.facing = jobbra; break;
+
+			case le.valueOf():
+			case le: this.facing = balra; break;
+			
+			case jobbra.valueOf():
+			case jobbra: this.facing = le; break;
+			
+			case balra.valueOf():
+			case balra: this.facing = fel; break;
 
 			default: break;
 		}
@@ -540,50 +620,48 @@ this.Robot = class extends Movable {
 
 const roundHandler = {
 	
-	kör: 0, waits: 0,
-	első: 0, length: 500,
-	i: 0, nr: null,
+	kör: 0, első: 0, length: 500,
+	i: 0, nr: null, waitSet: false, paused: false,
 
-	next() {
-		this.i++;
-		if (this.i == map.robotok.length) {
-			this.i = 0;
-			this.kör++;
-			let tempNr = this.nr;
-			this.nr = null;
-			return tempNr - Date.now();
+	next(arg) {
+		if (arg) {
+			this.waitSet = false;
+			this.i++;
+			if (this.i == map.robotok.length) {
+				this.i = 0;
+				this.kör++;
+				let tempNr = this.nr;
+				this.nr = null;
+				return tempNr - Date.now();
+			}
+			return (this.nr === null ? (this.nr = (this.első + (this.kör + 1) * this.length)) : this.nr) - Date.now();
+		} else {
+			if (this.waitSet && this.nr > Date.now())
+				return this.nr - Date.now();
+			else {
+				this.nr = Date.now() + this.length;
+				this.waitSet = true;
+				return this.length;
+			}
 		}
-		return (this.nr === null ? (this.nr = (this.első + (this.kör + 1) * this.length)) : this.nr) - Date.now();
-	}, wait() {
-		this.i++;
-		if (this.i == map.robotok.length) {
-			this.i = 0;
-			this.waits++;
-			let tempNr = this.nr;
-			this.nr = null;
-			return tempNr - Date.now();
-		}
-		return (this.nr === null ? (this.nr = (this.első + (this.kör + this.waits + 1) * this.length)) : this.nr) - Date.now();
 	}
 
 };
-let plus = 0;
 //#region global
 const sleep = async ms => {
-	if (ms < 1)
+	if (ms < 0)
 		return;
 	await new Promise(res => setTimeout(res, ms));
 }, awaitRoundEnd = async r => {
-	let a = roundHandler.next();
+	let a = roundHandler.next(true);
 	console.log(`[${r.name}] sleeping ${a} ms`);
 	await sleep(a);
-	while (map.robotok.some(o => o !== r && !o.finished && o.round < r.round)) {
-		let b = roundHandler.wait();
+	r.round++;
+	while (roundHandler.paused || map.robotok.some(o => o !== r && !o.finished && o.round < r.round)) { // TODO fix this shiet
+		let b = roundHandler.next(false);
 		console.log(`[${r.name}] waiting ${b} ms`);
 		await sleep(b);
 	}
-	r.round++;
-	roundHandler.waits = 0;
 }, arrOr0 = arr => {
 	switch (arr.length) {
 		case 0: return null;
@@ -611,5 +689,5 @@ const sleep = async ms => {
 		return o;
 	}
 	return null;
-}, KeressTömb = (x, y) => map.objs.filter(o => o.x == x && o.y == y), Keress = (x, y) => arrOr0(KeressTömb(x, y));
+}, KeressTömb = (x, y) => map.objs.filter(o => o.x == Math.floor(x) && o.y == Math.floor(y)), Keress = (x, y) => arrOr0(KeressTömb(x, y));
 //#endregion global
