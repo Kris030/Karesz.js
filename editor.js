@@ -54,7 +54,7 @@ canvas.addEventListener('click', e => {
 		return;
 	let gridSize = canvas.width / map.width, x = Math.floor(e.clientX / gridSize), y = Math.floor(e.clientY / gridSize);
 	console.log('placing on: ' + x + " " + y);
-	map.objs.push({
+	map.objs.push({ // TODO
 		x: x, y: y
 	});
 	drawGlobal();
@@ -72,3 +72,11 @@ document.querySelectorAll('.obj-entry').forEach(e => e.addEventListener('click',
 	else
 		s.target.parentNode.id = 'selected';
 }, false));
+
+document.getElementById('addCustomB').addEventListener('click', () => {
+	let fi = document.createElement('input');
+	fi.type = 'file';
+	fi.name = 'addCustomType';
+	fi.click();
+	fi.on
+}, false);

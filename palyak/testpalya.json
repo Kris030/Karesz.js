@@ -4,7 +4,7 @@
 	"width": 30,
 	"height": 20,
 	"rules": {
-	}, "onload": "setInterval(()=>map.robotok.forEach(async o=>{if(Math.random()>.5){await o.Fordulj(Math.random()>.5?jobbra:balra)}else if(o.Mi_van_elÅ‘ttem() == null){await o.LÃ©pj()}}),50)",
+	}, "onload": "console.log('loaded')",
 	"objs": [
 		{"type":"Wall","args":[5,1,"hsl(90,80%,50%)"]},
 		{"type":"Wall","args":[6,1,"hsl(108,80%,50%)"]},
@@ -71,9 +71,6 @@
 		{"type":"Wall","args":[24,11,"hsl(264,80%,50%)"]},
 		{"type":"Wall","args":[24,12,"hsl(288,80%,50%)"]},
 		{"type":"Wall","args":[24,13,"hsl(312,80%,50%)"]},
-		{"type":"Wall","args":[24,14,"hsl(336,80%,50%)"]},
-		{"type":"Robot","args":["robi12",11,10,["Karesz0.png","Karesz2.png","Karesz1.png","Karesz3.png"],1]},
-		{"type":"Robot","args":["robi13",18,7,["Karesz0.png","Karesz2.png","Karesz1.png","Karesz3.png"],1]},
-		{"type":"Robot","args":["robi14",12,9,["Karesz0.png","Karesz2.png","Karesz1.png","Karesz3.png"],1]}
+		{"type":"Wall","args":[24,14,"hsl(336,80%,50%)"]}
 	]
 }

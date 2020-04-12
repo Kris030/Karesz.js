@@ -23,21 +23,20 @@ body {
 }
 
 button {
-	background: bisque;
-	border: 3px solid salmon;
+	background: var(--grey);
+	border: 3px solid var(--gray);
+	color: darkgray;
 	border-radius: 10px;
-	padding: 5px 15px 5px 15px;
 	outline: none;
 	margin: 5px;
-	margin-bottom: 5px;
-	margin-left: 20px;
-	font-size: 2em;
+	padding: 0 14px 0 14px;
+	font-size: 2.5em;
 }
 
 button:hover {
-	background-color: rgb(189, 199, 207);
-	color: brown;
-	transition: .5s;
+	background-color: rgb(176, 178, 180);
+	color: black;
+	transition: .3s;
 }
 
 #canv {
@@ -93,6 +92,8 @@ input[type="number"] {
 	flex-wrap: wrap;
 	flex-flow: wrap;
 	max-width: 250px;
+	list-style-type: none;
+	align-items: center;
 }
 
 .obj-entry {
