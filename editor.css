@@ -1,0 +1,118 @@
+* {
+	padding: 0;
+	margin: 0;
+	font-family: 'Raleway', sans-serif;
+}
+
+:root {
+	--grey: rgb(78, 78, 78);
+	--light-grey: rgb(136, 136, 136);
+}
+
+::selection {
+	background: white;
+	color: brown;
+}
+
+body {
+	background: var(--grey);
+	width: 100vw;
+	height: 100vh;
+	color: darkorange;
+	overflow: hidden;
+}
+
+button {
+	background: bisque;
+	border: 3px solid salmon;
+	border-radius: 10px;
+	padding: 5px 15px 5px 15px;
+	outline: none;
+	margin: 5px;
+	margin-bottom: 5px;
+	margin-left: 20px;
+	font-size: 2em;
+}
+
+button:hover {
+	background-color: rgb(189, 199, 207);
+	color: brown;
+	transition: .5s;
+}
+
+#canv {
+	position: absolute;
+	display: block;
+	background: white;
+	border-right: solid 2px black;
+}
+
+#panel {
+	display: flex;
+	flex-direction: column;
+	position: absolute;
+}
+
+#panel > div {
+	padding: 10px 0 0 10px;
+	width: fit-content;
+}
+
+img {
+	pointer-events: none;
+	user-select: none;
+}
+
+input {
+	border: 2px solid grey;
+	border-radius: 10px;
+	padding: 3px;
+	width: 100px;
+	outline: none;
+}
+
+input::selection {
+	color: red;
+	background: lightgrey;
+}
+
+input[type="number"] {
+	width: 3em;
+}
+
+#mapSettings > div {
+	padding-top: 10px;
+}
+
+#objs-table {
+	background: var(--light-grey);
+	border: 3px solid var(--light-grey);
+	border-radius: 10px;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	flex-flow: wrap;
+	max-width: 250px;
+}
+
+.obj-entry {
+	user-select: none;
+	background: var(--grey);
+	border: 8px solid var(--grey);
+	border-radius: 10px;
+	color: white;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 5px;
+}
+
+#selected {
+	background: greenyellow;
+	border: 8px solid greenyellow;
+}
+
+.obj-entry img {
+	width: fit-content;
+	height: fit-content;
+}

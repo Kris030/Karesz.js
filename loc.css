@@ -14,6 +14,11 @@
 	color: brown;
 }
 
+img {
+	pointer-events: none;
+	user-select: none;
+}
+
 body {
 	background: var(--backg);
 	width: 100%;

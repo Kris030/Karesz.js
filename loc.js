@@ -25,12 +25,12 @@ const loadSajt = () => {
 	content.innerHTML = '';
 	let btn = document.createElement('button');
 	btn.innerText = 'Válassz fájlt';
-	btn.addEventListener('click', fileInp.click, false);
+	btn.addEventListener('click', () => fileInp.click(), false);
 	content.appendChild(btn);
 };
 let wIn, hIn;
 const loadEmpty = () => {
-	
+
 	errored = false;
 	mode = 2;
 	content.innerHTML = '';
@@ -177,7 +177,7 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 	pctx.fillStyle = 'gray';
 	pctx.fillRect(0, 0, prt.width, prt.width);
 	if (kiválaszott) {
-		let str = JSON.stringify(kiválaszott, (key, val)=>key=='facing'?val.toString():val, 2), arr = str.split('\n'), max = 0;
+		let str = JSON.stringify(kiválaszott, (key, val)=>key=='facing'?val.valueOf():val, 2), arr = str.split('\n'), max = 0;
 		arr.forEach(e=>{if(e.length>max)max=e.length;});
 		viwer.rows = arr.length;
 		viwer.cols = Math.min(max, 37);
@@ -209,8 +209,8 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 			}
 			::selection{color: red; background: white;}
 			</style>
-		<div id="panel" style="display:flex;justify-content:space-between;flex-direction:column;width:300px;position:absolute;">
-			<div style="padding:10px 0 10px 10px;display:flex;flex-direction:column;min-width:${panelSize}px;">
+		<div id="panel" style="display:flex;justify-content:space-between;flex-direction:column;position:absolute;min-width:${panelSize}px;">
+			<div style="padding:10px 0 10px 10px;display:flex;flex-direction:column;">
 				<h1 style="color:darkgoldenrod;" id="map-name">Map Name</h1>
 				<div style="color:burlywood;font-size:1.5em; margin-left: 8px" id="selected">
 					<h3>Selected Object</h3>
@@ -235,10 +235,6 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 		pctx = prt.getContext('2d')
 		
 		let selType = document.getElementById('sel-type');
-		
-        /*pctx.imageSmoothingEnabled = false;
-        pctx.webkitImageSmoothingEnabled = false;
-		pctx.mozImageSmoothingEnabled = false;*/
 		
 		pctx.fillStyle = 'gray';
 		pctx.fillRect(0, 0, prt.width, prt.width);
@@ -268,6 +264,8 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 		st.addEventListener('click', () => {
 			st.src = roundHandler.paused ? 'start.png' : 'pause.png';
 			roundHandler.paused = !roundHandler.paused;
+			if (!roundHandler.paused)
+				roundHandler.első = Date.now();
 		}, false);
 
 		window.addEventListener('resize', resize, false);
@@ -324,7 +322,7 @@ const irány = value => {
 		case jobbra:
 		case balra:
 			return value;
-		
+
 		case fel.valueOf(): return fel;
 		case le.valueOf(): return le;
 		case jobbra.valueOf(): return jobbra;
@@ -367,7 +365,7 @@ this.Wall = class extends GameObject {
 		g.fillStyle = this.fill;
 		g.fillRect(this.x * gridSize + g.lineWidth, this.y * gridSize + g.lineWidth, gridSize - g.lineWidth * 2, gridSize - g.lineWidth * 2);
 	}
-	
+
 	asArgs() {
 		return [this.x, this.y, this.fill];
 	}
@@ -383,7 +381,7 @@ this.Wall = class extends GameObject {
 }
 
 this.Kavics = class extends GameObject {
-	
+
 	constructor(x, y, fill) {
 		super(x, y);
 		this.fill = fill || 'black';
@@ -621,7 +619,7 @@ this.Robot = class extends Movable {
 const roundHandler = {
 	
 	kör: 0, első: 0, length: 500,
-	i: 0, nr: null, waitSet: false, paused: false,
+	i: 0, nr: null, waitSet: false, paused: true,
 
 	next(arg) {
 		if (arg) {

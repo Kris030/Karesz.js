@@ -85,6 +85,11 @@ button {
 	font-size: 2em;
 }
 
+img {
+	pointer-events: none;
+	user-select: none;
+}
+
 button:hover {
 	background-color: rgb(189, 199, 207);
 	color: brown;

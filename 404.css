@@ -48,6 +48,11 @@ body div {
 	padding: 20px;
 }
 
+img {
+	pointer-events: none;
+	user-select: none;
+}
+
 #karikep {
 	width: fit-content;
 	height: fit-content;

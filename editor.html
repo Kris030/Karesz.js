@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="hu">
+	<head>
+		<meta charset="UTF-8">
+		<title>Karesz.js</title>
+		<link href="https://fonts.googleapis.com/css?family=Raleway:400,500&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="editor.css">
+	</head>
+	<body>
+		<canvas id="canv"></canvas>
+		<div id="panel">
+			<div id="mapSettings">
+				<h1>Pálya Beállítások</h1>
+				<div>
+					<label for="">Pálya neve</label>
+					<input type="text" name="" id="">
+				</div>
+				<div>
+					<label for="pWidth">Szélesség</label>
+					<input type="number" name="pEditWidth" id="pWidth">
+					<label for="pHeight">Magasság</label>
+					<input type="number" name="pEditHeight" id="pHeight" size="3">
+				</div>
+			</div>
+			<div>
+				<h1>Objektumok</h1>
+				<ul id="objs-table">
+					<li class="obj-entry">
+						<img src="Karesz0.png" alt="">
+						<span>Kavics</span>
+					</li>
+					<li class="obj-entry">
+						<img src="Karesz1.png" alt="">
+						<span>Fal</span>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<script src="editor.js"></script>
+	</body>
+</html>

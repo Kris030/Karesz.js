@@ -4,7 +4,7 @@
 	"width": 30,
 	"height": 20,
 	"rules": {
-	}, "onload": "setInterval(()=>map.robotok.forEach(async o=>{if(Math.random()>.5){await o.Fordulj(Math.random()>.5?jobbra:balra)}else if(o.Mi_van_előttem() == null){await o.Lépj()}}),50)",
+	}, "onload": "setInterval(()=>map.robotok.forEach(async o=>{if(Math.random()>.5){await o.Fordulj(Math.random()>.5?jobbra:balra)}else if(o.Mi_van_elÅ‘ttem() == null){await o.LÃ©pj()}}),50)",
 	"objs": [
 		{"type":"Wall","args":[5,1,"hsl(90,80%,50%)"]},
 		{"type":"Wall","args":[6,1,"hsl(108,80%,50%)"]},

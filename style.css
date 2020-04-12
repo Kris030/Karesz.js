@@ -21,6 +21,11 @@ body {
 	text-align: center;
 }
 
+img {
+	pointer-events: none;
+	user-select: none;
+}
+
 #karikep {
 	align-self: center;
 	padding-left: .75cm;
