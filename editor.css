@@ -22,7 +22,7 @@ body {
 	overflow: hidden;
 }
 
-button {
+#addCustomB {
 	background: var(--grey);
 	border: 3px solid var(--gray);
 	color: darkgray;
@@ -33,9 +33,27 @@ button {
 	font-size: 2.5em;
 }
 
-button:hover {
+#addCustomB:hover {
 	background-color: rgb(176, 178, 180);
 	color: black;
+	transition: .3s;
+}
+
+#save {
+	background: grey;
+	border: 3px solid gray;
+	color: orange;
+	border-radius: 10px;
+	outline: none;
+	margin: 5px;
+	padding: 0 14px 0 14px;
+	font-size: 2.5em;
+	width: fit-content;
+}
+
+#save:hover {
+	background-color: rgb(176, 178, 180);
+	color: darkgoldenrod;
 	transition: .3s;
 }
 
@@ -49,7 +67,33 @@ button:hover {
 #panel {
 	display: flex;
 	flex-direction: column;
+	justify-content: space-between;
 	position: absolute;
+}
+
+#panelIn {
+	display: flex;
+	flex-direction: column;
+}
+
+#panelIn > div {
+	margin-top: 10px;
+	border: 1.5px solid grey;
+	border-radius: 10px;
+	padding: 5px;
+	margin-right: 5px;
+}
+
+label {
+	font-size: 1.2em;
+}
+
+#panelIn > #mapSettings {
+	margin-top: 0;
+}
+
+h1 {
+	padding-bottom: 5px;
 }
 
 #panel > div {
@@ -84,16 +128,15 @@ input[type="number"] {
 }
 
 #objs-table {
+	margin-top: 5px;
 	background: var(--light-grey);
 	border: 3px solid var(--light-grey);
 	border-radius: 10px;
 	display: flex;
 	flex-direction: row;
-	flex-wrap: wrap;
-	flex-flow: wrap;
-	max-width: 250px;
 	list-style-type: none;
 	align-items: center;
+	flex-wrap: wrap;
 }
 
 .obj-entry {
@@ -116,4 +159,30 @@ input[type="number"] {
 .obj-entry img {
 	width: fit-content;
 	height: fit-content;
+}
+
+span {
+	padding-top: 5px;
+}
+
+input[type="checkbox"] {
+	width: auto;
+}
+
+#controls {
+	display: flex;
+	flex-direction: column;
+}
+
+.iBlock {
+	display: inline-block;
+	margin-top: 2px;
+}
+
+.controlDivEntry {
+	margin-top: 5px;
+	padding: 10px;
+	border: 1.5px solid grey;
+	border-radius: 10px;
+	width: fit-content;
 }

@@ -9,35 +9,40 @@
 	<body>
 		<canvas id="canv"></canvas>
 		<div id="panel">
-			<div id="mapSettings">
-				<h1>Pálya Beállítások</h1>
-				<div>
-					<label for="">Pálya neve</label>
-					<input type="text" name="" id="">
+			<div id="panelIn">
+				<div id="mapSettings">
+					<h1>Pálya Beállítások</h1>
+					<div>
+						<label for="mapNameForm">Pálya neve</label>
+						<input type="text" name="mapName" id="mapNameForm">
+					</div>
+					<div>
+						<div class="iBlock">
+							<label for="pWidth">Szélesség</label>
+							<input type="text" name="pEditWidth" id="pWidth" style="width: 40px;">
+						</div>
+						<div class="iBlock">
+							<label for="pHeight">Magasság</label>
+							<input type="text" name="pEditHeight" id="pHeight" style="width: 40px;">
+						</div>
+					</div>
 				</div>
 				<div>
-					<label for="pWidth">Szélesség</label>
-					<input type="number" name="pEditWidth" id="pWidth">
-					<label for="pHeight">Magasság</label>
-					<input type="number" name="pEditHeight" id="pHeight" size="3">
+					<h1>Szerkesztési Beállítások</h1>
+					<label for="dragDupe">Húzásnál duplázás</label>
+					<input type="checkbox" name="dupeOnDrag" id="dragDupe">
+				</div>
+				<div>
+					<h1>Objektumok</h1>
+					<ol id="objs-table">
+						<li>
+							<button id="addCustomB">+</button>
+						</li>
+					</ol>
+					<div id="controls"></div>
 				</div>
 			</div>
-			<div>
-				<h1>Objektumok</h1>
-				<ul id="objs-table">
-					<li class="obj-entry">
-						<img src="Karesz0.png" alt="">
-						<span>Kavics</span>
-					</li>
-					<li class="obj-entry">
-						<img src="Karesz1.png" alt="">
-						<span>Fal</span>
-					</li>
-					<li>
-						<button id="addCustomB">+</button>
-					</li>
-				</ul>
-			</div>
+			<button id="save">Mentés</button>
 		</div>
 		<script src="common.js"></script>
 		<script src="editor.js"></script>

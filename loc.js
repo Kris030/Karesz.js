@@ -65,30 +65,8 @@ const loadEmpty = () => {
 	hIn.style.outline = 'none';
 	content.appendChild(hIn);
 
-	// TODO cleanup
-	function setInputFilter(textbox, inputFilter) {
-		["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function(event) {
-			textbox.addEventListener(event, function() {
-			if (inputFilter(this.value)) {
-				this.oldValue = this.value;
-				this.oldSelectionStart = this.selectionStart;
-				this.oldSelectionEnd = this.selectionEnd;
-			} else if (this.hasOwnProperty("oldValue")) {
-				this.value = this.oldValue;
-				this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-			} else
-				this.value = "";
-			});
-		});
-	}
-	let meth = v => {
-		if (v.includes('.'))
-			return false;
-		let n = new Number(v);
-		return n % 1 == 0 && n > 0;
-	};
-	setInputFilter(wIn, meth);
-	setInputFilter(hIn, meth);
+	setInputFilter(wIn, methFilter);
+	setInputFilter(hIn, methFilter);
 };
 
 document.getElementById('sajatpalya').addEventListener('change', loadSajt, false);
@@ -99,7 +77,7 @@ document.getElementById('ures').addEventListener('change', loadEmpty, false);
 //#region game
 
 let map;
-const parseGameObject = o => new window[o.type](...o.args), unparseGameObject = o => ({type: o.getClass(), args: o.asArgs()}),
+const parseGameObject = o => new window[o.type](...o.args),
 loadMap = async () => {
 	switch (mode) {
 		case 0:
@@ -111,7 +89,6 @@ loadMap = async () => {
 			map.robotok = map.objs.filter(o => o instanceof Robot);
 			map.loadResult = eval(map.onload);
 			break;
-
 		case 2:
 			map = {
 				width: new Number(wIn.value),
@@ -153,9 +130,7 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 	}
 	setSelJSON();
 }, resize = () => {
-
 	let oldW = canvas.width, w = window.innerWidth - panelSize, h = map.height / map.width * w;
-
 	if (h > window.innerHeight) {
 		h = window.innerHeight;
 		w = map.width / map.height * h;
@@ -284,7 +259,6 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 	setTimeout(resize, 0);
 };
 document.querySelector('#startButton').addEventListener('click', startListener, false);
-//#endregion game
 
 const roundHandler = {
 	
@@ -314,12 +288,6 @@ const roundHandler = {
 		}
 	}
 
-};
-//#region global
-const sleep = async ms => {
-	if (ms < 0)
-		return;
-	await new Promise(res => setTimeout(res, ms));
 }, awaitRoundEnd = async r => {
 	let a = roundHandler.next(true);
 	console.log(`[${r.name}] sleeping ${a} ms`);
@@ -330,33 +298,5 @@ const sleep = async ms => {
 		console.log(`[${r.name}] waiting ${b} ms`);
 		await sleep(b);
 	}
-}, arrOr0 = arr => {
-	switch (arr.length) {
-		case 0: return null;
-		case 1: return arr[0];
-		default: return arr;
-	}
-}, Adj_hozzá = o => {
-	if (map.objs.indexOf(o) != -1)
-		return;
-	map.objs.push(o);
-	if (o instanceof Robot)
-		map.robotok.push(o);
-	drawGlobal();
-	return o;
-}, Vedd_ki = o => {
-	let i1 = map.objs.indexOf(o);
-	if (i1 != -1) {
-		map.objs.splice(i1, 1);
-		if (o instanceof Robot) {
-			let i2 = map.robotok.indexOf(o);
-			if (i2 != -1)
-				map.robotok.splice(i2, 1);
-		}
-		kiválaszott = null;
-		drawGlobal();
-		return o;
-	}
-	return null;
-}, KeressTömb = (x, y) => map.objs.filter(o => o.x == Math.floor(x) && o.y == Math.floor(y)), Keress = (x, y) => arrOr0(KeressTömb(x, y));
-//#endregion global
+}
+//#endregion game

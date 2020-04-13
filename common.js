@@ -98,6 +98,29 @@ this.Wall = class extends GameObject {
 	}
 
 }
+Wall.factory = {
+	createControls() {
+		let picker = document.createElement('input');
+		picker.type = 'color';
+		picker.value = '#8b0000';
+		picker.style.width = '80px';
+		return {
+			'Color': [
+				picker,
+				function() {
+					return picker.value;
+				}
+			]
+		};
+	}, async createObject(x, y, vals) {
+		return new Wall(x, y, vals[0]);
+	}, drawIcon(g, w, h) {
+		g.fillStyle = 'darkred';
+		g.fillRect(0, 0, w, h);
+	}, toString() {
+		return 'Wall';
+	}
+};
 
 this.Kavics = class extends GameObject {
 
@@ -126,6 +149,30 @@ this.Kavics = class extends GameObject {
 	}
 
 }
+Kavics.factory = {
+	createControls() {
+		let picker = document.createElement('input');
+		picker.type = 'color';
+		picker.value = '#ffff00';
+		picker.style.width = '80px';
+		return {
+			'Color': [
+				picker, function() {
+					return picker.value;
+				}
+			]
+		};
+	}, async createObject(x, y, vals) {
+		return new Kavics(x, y, vals[0]);
+	}, drawIcon(g, s) {
+		g.fillStyle = 'yellow';
+		g.beginPath();
+		g.arc(25, 25, s / 2, 0, 2 * Math.PI);
+		g.fill();
+	}, toString() {
+		return 'Kavics';
+	}
+};
 
 this.Movable = class extends GameObject {
 
@@ -333,4 +380,116 @@ this.Robot = class extends Movable {
 	//#endregion non player
 
 }
+Robot.factory = { // name, res, facing
+	createControls() {
+		let name = document.createElement('input');
+		name.type = 'text';
+		let facing = document.createElement('select');
+		['fel', 'le', 'jobbra', 'balra'].forEach(e => {
+			let data = document.createElement('option');
+			data.text = e;
+			facing.appendChild(data);
+		});
+		let p = document.createElement('p');
+		p.innerText = 'Feature fuck off';
+		return {
+			Name: [
+				name, function() {
+					return name.value;
+				}
+			], Facing: [
+				facing, function () {
+					return irány(facing.value);
+				}
+			], Resources: [
+				p, function() {
+					return ['Karesz_up.png','Karesz2.png','Karesz1.png','Karesz3.png'];
+				}
+			]
+		};
+	}, async createObject(x, y, vals) {
+		return await createRobot(vals[0], x, y, vals[2], vals[1], 0);
+	}, drawIcon(g, w, h) {
+		let img = new Image();
+		img.src = 'Karesz_up.png';
+		img.onload = () => g.drawImage(img, 0, 0, w, h);
+	}, toString() {
+		return 'Robot';
+	}
+};
+
+this.Zombi = class extends GameObject {
+
+}
+
 //#endregion classes
+
+//#region global
+const sleep = async ms => {
+	if (ms < 0)
+		return;
+	await new Promise(res => setTimeout(res, ms));
+}, arrOr0 = arr => {
+	switch (arr.length) {
+		case 0: return null;
+		case 1: return arr[0];
+		default: return arr;
+	}
+}, Adj_hozzá = o => {
+	if (map.objs.indexOf(o) != -1)
+		return;
+	map.objs.push(o);
+	if (o instanceof Robot)
+		map.robotok.push(o);
+	drawGlobal();
+	return o;
+}, Vedd_ki = o => {
+	let i1 = map.objs.indexOf(o);
+	if (i1 != -1) {
+		map.objs.splice(i1, 1);
+		if (o instanceof Robot) {
+			let i2 = map.robotok.indexOf(o);
+			if (i2 != -1)
+				map.robotok.splice(i2, 1);
+		}
+		kiválaszott = null;
+		drawGlobal();
+		return o;
+	}
+	return null;
+}, KeressTömb = (x, y) => map.objs.filter(o => o.x == Math.floor(x) && o.y == Math.floor(y)), Keress = (x, y) => arrOr0(KeressTömb(x, y));
+//#endregion global
+
+//#region util
+const download = (data, filename, type) => {
+    let file = new Blob([data], {type: type});
+    if (navigator.msSaveOrOpenBlob) // IE10+
+        navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+        let a = document.createElement('a'), url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = filename;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 0); 
+    }
+}, setInputFilter = (textbox, inputFilter) => {
+	['input', 'keydown', 'keyup', 'mousedown', 'mouseup', 'select', 'contextmenu', 'drop'].forEach(ev => {
+		textbox.addEventListener(ev, function() {
+			if (inputFilter(this.value)) {
+				this.oldValue = this.value;
+				this.oldSelectionStart = this.selectionStart;
+				this.oldSelectionEnd = this.selectionEnd;
+			} else if (this.oldValue) {
+				this.value = this.oldValue;
+				this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+			} else
+				this.value = '';
+		});
+	});
+}, methFilter = v => {
+	if (v.includes('.'))
+		return false;
+	let n = new Number(v);
+	return n % 1 == 0 && n > 0;
+};
+//#endregion util
