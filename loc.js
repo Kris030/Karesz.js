@@ -154,6 +154,26 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 		ctx.stroke();
 	}
 	map.objs.forEach(o => o.draw(ctx, gridSize));
+	/* TODO text bubbles:
+function drawBubble(ctx, x, y, w, h, radius) {
+	let r = x + w, b = y + h;
+	ctx.beginPath();
+	ctx.strokeStyle="black";
+	ctx.lineWidth="2";
+	ctx.moveTo(x+radius, y);
+	ctx.lineTo(x+radius/2, y-10);
+	ctx.lineTo(x+radius * 2, y);
+	ctx.lineTo(r-radius, y);
+	ctx.quadraticCurveTo(r, y, r, y+radius);
+	ctx.lineTo(r, y+h-radius);
+	ctx.quadraticCurveTo(r, b, r-radius, b);
+	ctx.lineTo(x+radius, b);
+	ctx.quadraticCurveTo(x, b, x, b-radius);
+	ctx.lineTo(x, y+radius);
+	ctx.quadraticCurveTo(x, y, x+radius, y);
+	ctx.stroke();
+}
+	*/
 	if (kiválaszott) {
 		ctx.strokeStyle = 'orange';
 		ctx.lineWidth = gridSize * .04;

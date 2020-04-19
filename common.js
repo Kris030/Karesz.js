@@ -54,6 +54,7 @@ this.GameObject = class {
 
 	constructor(x, y) {
 		this.listeners = [];
+		this.textBubbles = [];
 		this.x = x;
 		this.y = y;
 	}
