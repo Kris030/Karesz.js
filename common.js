@@ -34,16 +34,16 @@ const irány = value => {
 		case le: case fel: case jobbra: case balra:
 			return value;
 
-		case fel.valueOf(): return fel;
+		case fel.valueOf():
 		case fel.toString(): return fel;
 
-		case le.valueOf(): return le;
+		case le.valueOf():
 		case le.toString(): return le;
 
-		case jobbra.valueOf(): return jobbra;
+		case jobbra.valueOf():
 		case jobbra.toString(): return jobbra;
 
-		case balra.valueOf(): return balra;
+		case balra.valueOf():
 		case balra.toString(): return balra;
 
 		default: return null;
@@ -53,11 +53,20 @@ const irány = value => {
 this.GameObject = class {
 
 	constructor(x, y) {
+		this.listeners = [];
 		this.x = x;
 		this.y = y;
 	}
 
-	draw(g, gridSize) {}
+	addEventListener(type, fire) {
+		this.listeners.push({ type, fire });
+	}
+
+	fireListeners(type) {
+		listeners.forEach(l=>{if (l.type == type) l.fire();});
+	}
+
+	draw(g, s) {}
 
 	asArgs() {
 		return [this.x, this.y];
@@ -97,6 +106,14 @@ this.Wall = class extends GameObject {
 		return 'Wall';
 	}
 
+	getEditor() {
+		let Color = document.createElement('input');
+		Color.type = 'color';
+		Color.value = this.fill;
+		Color.addEventListener('input', () => { this.fill = Color.value; drawGlobal(); }, false);
+		return {Color};
+	}
+	
 }
 Wall.factory = {
 	createControls() {
@@ -146,6 +163,14 @@ this.Kavics = class extends GameObject {
 
 	getClass() {
 		return 'Kavics';
+	}
+
+	getEditor() {
+		let Color = document.createElement('input');
+		Color.type = 'color';
+		Color.value = this.fill;
+		Color.addEventListener('input', () => { this.fill = Color.value; drawGlobal(); }, false);
+		return {Color};
 	}
 
 }
@@ -269,56 +294,82 @@ this.Robot = class extends Movable {
 		this.res = res;
 		this.name = name;
 		this.round = round || 0;
+		this.queue = [];
+		this.resolves = [];
 	}
 
 	Befejez() {
 		this.finished = true;
 	}
 
-	async handleRoundEnd() {
-		await awaitRoundEnd(this);
+	wait() {
+		return new Promise(res => this.resolves.push(res));
 	}
-
+	
+	async action(a) {
+		switch (a.a) {
+			case 0: return;
+			case 1: this.move(); console.log('move'); return;
+			case 2: this.turn(a.irány); return;
+			case 3: this.turnRight(); return;
+			case 4: this.turnLeft(); return;
+			case 5: Adj_hozzá(new Kavics(this.x, this.y, a.szín)); return;
+			case 6:
+				// TODO kavics storage
+				let arr = KeressTömb(this.x, this.y);
+				for (let i = 0; i < arr.length; i++)
+					if (arr[i] instanceof Kavics) {
+						map.objs.splice(i, 1);
+						break;
+					}
+				return;
+			
+			default: await this.wait(); this.round++; return;
+		}
+	}
+	
 	//#region Time consuming
 
 	async Várd_meg_a_kör_végét() {
-		await this.handleRoundEnd();
+		this.queue.push({a: 0});
+		await this.wait();
+		this.round++;
 	}
 
 	async Lépj() {
-		await this.handleRoundEnd();
-		this.move();
+		this.queue.push({a: 1});
+		await this.wait();
+		this.round++;
 	}
 
 	async Fordulj(irány) {
-		await this.handleRoundEnd();
-		this.turn(irány);
+		this.queue.push({a: 2, irány});
+		await this.wait();
+		this.round++;
 	}
 
 	async Fordulj_jobbra() {
-		await this.handleRoundEnd();
-		this.turnRight();
+		this.queue.push({a: 3});
+		await this.wait();
+		this.round++;
 	}
 
 	async Fordulj_balra() {
-		await this.handleRoundEnd();
-		this.turnLeft();
+		this.queue.push({a: 4});
+		await this.wait();
+		this.round++;
 	}
 
 	async Tegyél_le_egy_kavicsot(szín) {
-		await this.handleRoundEnd();
-		Adj_hozzá(new Kavics(this.x, this.y, szín));
+		this.queue.push({a: 5, szín});
+		await this.wait();
+		this.round++;
 	}
 	
 	async Vegyél_fel_egy_kavicsot() {
-		await this.handleRoundEnd();
-		// TODO kavics storage
-		let arr = KeressTömb(this.x, this.y);
-		for (let i = 0; i < arr.length; i++)
-			if (arr[i] instanceof Kavics) {
-				map.objs.splice(i, 1);
-				break;
-			}
+		this.queue.push({a: 6});
+		await this.wait();
+		this.round++;
 	}
 	//#endregion Time consuming
 
@@ -354,9 +405,40 @@ this.Robot = class extends Movable {
 		return Keress(előttemX, előttemY);
 	}
 
+	Mi_van_előttem_tömb() {
+		let előttemX;
+		switch (this.facing) {
+	
+			case jobbra.valueOf():
+			case jobbra: előttemX = this.x + 1; break;
+	
+			case balra.valueOf():
+			case balra: előttemX = this.x - 1; break;
+	
+			default: előttemX = this.x; break;
+		}
+		let előttemY;
+		switch (this.facing) {
+
+			case fel.valueOf():
+			case fel: előttemY = this.y - 1; break;
+	
+			case fel.valueOf():
+			case fel: előttemY = this.y + 1; break;
+	
+			default: előttemY = this.y; break;
+		}
+		return KeressTömb(előttemX, előttemY);
+	}
+
 	Mi_van_alattam() {
 		let arr = KeressTömb(this.x, this.y);
 		return arrOr0(arr.splice(arr.indexOf(this), 1));
+	}
+
+	Mi_van_alattam_tömb() {
+		let arr = KeressTömb(this.x, this.y);
+		return arr.splice(arr.indexOf(this), 1);
 	}
 	//#endregion Non time consuming
 
@@ -367,7 +449,7 @@ this.Robot = class extends Movable {
 	}
 
 	asArgs() {
-		return [this.name, this.x, this.y, `["${this.res[0].src}","${this.res[1].src}","${this.res[2].src}","${this.res[3].src}"]`, this.facing.valueOf()];
+		return [this.name, this.x, this.y, [this.res[0].src, this.res[1].src, this.res[2].src, this.res[3].src], this.facing.valueOf()];
 	}
 
 	toString() {
@@ -377,38 +459,60 @@ this.Robot = class extends Movable {
 	getClass() {
 		return 'Robot';
 	}
+
+	getEditor() {
+		let Name = document.createElement('input'), Facing = document.createElement('select');
+		Facing.innerHTML = '<option>fel</option><option>le</option><option>jobbra</option><option>balra</option>';
+		let ir = [fel, le, jobbra, balra];
+		Facing.selectedIndex = ir.indexOf(this.facing);
+		Facing.addEventListener('input', () => { this.facing = irány(ir[Facing.selectedIndex]); drawGlobal(); }, false);
+		Name.type = 'text';
+		Name.value = this.name;
+		Name.addEventListener('input', () => { this.name = Name.value; drawGlobal(); }, false);
+		return {Name, Facing};
+	}
+
+	getMethods() {
+		let r = this;
+		return [
+			()=>this.Befejez(),
+			async ()=>await r.handleRoundEnd(),
+			async ()=>await r.Várd_meg_a_kör_végét(),
+			async ()=>await r.Lépj(),
+			async ()=>await r.Fordulj_jobbra(),
+			async ()=>await r.Fordulj_balra(),
+			async s=>await r.Tegyél_le_egy_kavicsot(s),
+			async i=>await r.Fordulj(i),
+			async ()=>await r.Vegyél_fel_egy_kavicsot(),
+			()=>r.Mi_van_előttem(),
+			()=>r.Mi_van_előttem_tömb(),
+			()=>r.Mi_van_alattam_tömb(),
+			()=>r.Mi_van_alattam(),
+			()=>r.toString(),
+			()=>r.move(),
+			()=>r.turn(),
+			()=>r.turnLeft(),
+			()=>r.turnRight()
+		];
+	}
+
 	//#endregion non player
 
 }
 Robot.factory = { // name, res, facing
 	createControls() {
-		let name = document.createElement('input');
+		let name = document.createElement('input'), facing = document.createElement('select');
+		facing.innerHTML = '<option>fel</option><option>le</option><option>jobbra</option><option>balra</option>';
 		name.type = 'text';
-		let facing = document.createElement('select');
-		['fel', 'le', 'jobbra', 'balra'].forEach(e => {
-			let data = document.createElement('option');
-			data.text = e;
-			facing.appendChild(data);
-		});
-		let p = document.createElement('p');
-		p.innerText = 'Feature fuck off';
 		return {
 			Name: [
-				name, function() {
-					return name.value;
-				}
+				name, function() { return name.value; }
 			], Facing: [
-				facing, function () {
-					return irány(facing.value);
-				}
-			], Resources: [
-				p, function() {
-					return ['Karesz_up.png','Karesz2.png','Karesz1.png','Karesz3.png'];
-				}
+				facing, function () { return irány(facing.value); }
 			]
 		};
 	}, async createObject(x, y, vals) {
-		return await createRobot(vals[0], x, y, vals[2], vals[1], 0);
+		return await createRobot(vals[0], x, y, ['Karesz_up.png','Karesz2.png','Karesz1.png','Karesz3.png'], vals[1], 0);
 	}, drawIcon(g, w, h) {
 		let img = new Image();
 		img.src = 'Karesz_up.png';
@@ -418,18 +522,11 @@ Robot.factory = { // name, res, facing
 	}
 };
 
-this.Zombi = class extends GameObject {
-
-}
-
 //#endregion classes
 
 //#region global
-const sleep = async ms => {
-	if (ms < 0)
-		return;
-	await new Promise(res => setTimeout(res, ms));
-}, arrOr0 = arr => {
+const sleep = ms => new Promise(res => setTimeout(res, Math.max(ms, 0))),
+arrOr0 = arr => {
 	switch (arr.length) {
 		case 0: return null;
 		case 1: return arr[0];
@@ -462,7 +559,7 @@ const sleep = async ms => {
 
 //#region util
 const download = (data, filename, type) => {
-    let file = new Blob([data], {type: type});
+    let file = new Blob([data], {type});
     if (navigator.msSaveOrOpenBlob) // IE10+
         navigator.msSaveOrOpenBlob(file, filename);
     else { // Others
@@ -473,18 +570,16 @@ const download = (data, filename, type) => {
         setTimeout(() => URL.revokeObjectURL(url), 0); 
     }
 }, setInputFilter = (textbox, inputFilter) => {
-	['input', 'keydown', 'keyup', 'mousedown', 'mouseup', 'select', 'contextmenu', 'drop'].forEach(ev => {
-		textbox.addEventListener(ev, function() {
-			if (inputFilter(this.value)) {
-				this.oldValue = this.value;
-				this.oldSelectionStart = this.selectionStart;
-				this.oldSelectionEnd = this.selectionEnd;
-			} else if (this.oldValue) {
-				this.value = this.oldValue;
-				this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-			} else
-				this.value = '';
-		});
+	textbox.addEventListener('input', function() {
+		if (inputFilter(this.value)) {
+			this.oldValue = this.value;
+			this.oldSelectionStart = this.selectionStart;
+			this.oldSelectionEnd = this.selectionEnd;
+		} else if (this.oldValue) {
+			this.value = this.oldValue;
+			this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+		} else
+			this.value = '';
 	});
 }, methFilter = v => {
 	if (v.includes('.'))

@@ -11,6 +11,10 @@
 		<div id="mainDiv">
 			<div id="input">
 				<div class="in">
+					<input class="radio" type="radio" name="tip" id="ures">
+					<label for="ures">Üres</label>
+				</div>
+				<div class="in">
 					<input class="radio" type="radio" name="tip" id="sajatpalya">
 					<label for="sajatpalya">Saját</label>
 				</div>
@@ -18,15 +22,27 @@
 					<input class="radio" type="radio" name="tip" id="beeppalya" checked="true">
 					<label for="beeppalya">Beépített</label>
 				</div>
-				<div class="in">
-					<input class="radio" type="radio" name="tip" id="ures">
-					<label for="ures">Üres</label>
-				</div>
 			</div>
 			<div id="content"></div>
-			<div>
-				<button id="startButton">Start</button>
+			<p id="scTitle">Scriptek</p>
+			<div id="scWrapper">
+				<div id="scriptSettings">
+					<div class="in">
+						<input class="radio" type="radio" name="sc" id="sc1" checked="true">
+						<label for="sc1">Üres</label>
+					</div>
+					<div class="in">
+						<input class="radio" type="radio" name="sc" id="sc2">
+						<label for="sc2">Párosított</label>
+					</div>
+					<div class="in">
+						<input class="radio" type="radio" name="sc" id="sc3">
+						<label for="sc3">Egyesített</label>
+					</div>
+				</div>
+				<div id="scContent"></div>
 			</div>
+			<div> <button id="startButton">Start</button> </div>
 			<script src="common.js"></script>
 			<script src="loc.js"></script>
 		</div>

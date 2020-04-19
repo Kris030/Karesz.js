@@ -9,17 +9,17 @@ inpText.placeholder = 'palya.json';
 fileInp.type = 'file';
 fileInp.name = 'palyaFile';
 
-let errored, mode;
+let errored, mode, wIn, hIn, scMode = 0;
 const loadBeep = () => {
 	errored = false;
 	mode = 0;
 	content.innerHTML = '';
 	content.appendChild(inpText);
-}
+}, scContent = document.getElementById('scContent');
 
 loadBeep();
 
-const loadSajt = () => {
+document.getElementById('sajatpalya').addEventListener('change', () => {
 	errored = false;
 	mode = 1;
 	content.innerHTML = '';
@@ -27,9 +27,9 @@ const loadSajt = () => {
 	btn.innerText = 'Válassz fájlt';
 	btn.addEventListener('click', () => fileInp.click(), false);
 	content.appendChild(btn);
-};
-let wIn, hIn;
-const loadEmpty = () => {
+}, false);
+document.getElementById('beeppalya').addEventListener('change', loadBeep, false);
+document.getElementById('ures').addEventListener('change', () => {
 
 	errored = false;
 	mode = 2;
@@ -37,47 +37,69 @@ const loadEmpty = () => {
 
 	let pW = document.createElement('p');
 	pW.innerText = 'Szélesség';
+	pW.style.marginRight = '2px';
 	content.appendChild(pW);
 
 	wIn = document.createElement('input');
 	wIn.type = 'text';
 	wIn.name = 'widthIn';
 	wIn.placeholder = '0';
-	wIn.style.border = '2px solid grey';
-	wIn.style.borderRadius = '10px';
-	wIn.style.padding = '3px';
-	wIn.style.width = '60px';
-	wIn.style.outline = 'none';
 	content.appendChild(wIn);
 
 	let pH = document.createElement('p');
 	pH.innerText = 'Magasság';
+	pH.style.marginLeft = '5px';
+	pH.style.marginRight = '2px';
 	content.appendChild(pH);
 
 	hIn = document.createElement('input');
 	hIn.type = 'text';
 	hIn.name = 'heighthIn';
 	hIn.placeholder = '0';
-	hIn.style.border = '2px solid grey';
-	hIn.style.borderRadius = '10px';
-	hIn.style.padding = '3px';
-	hIn.style.width = '60px';
-	hIn.style.outline = 'none';
+	let inCss = 'border:2px solid grey;border-radius:10px;padding:3px;width:40px;outline:none';
+	hIn.style.cssText = inCss;
+	wIn.style.cssText = inCss;
 	content.appendChild(hIn);
 
 	setInputFilter(wIn, methFilter);
 	setInputFilter(hIn, methFilter);
-};
+}, false), scIn1 = document.createElement('input'), scIn2 = document.createElement('input');
+scIn1.type = scIn2.type = 'file';
+scIn1.name = 'eachScript';
+scIn1.multiple= 'multiple';
+scIn2.name = 'oneScript';
 
-document.getElementById('sajatpalya').addEventListener('change', loadSajt, false);
-document.getElementById('beeppalya').addEventListener('change', loadBeep, false);
-document.getElementById('ures').addEventListener('change', loadEmpty, false);
+let scButton;
+document.getElementById('sc1').addEventListener('change', () => { scContent.innerHTML = ''; scMode = 0; scButton = null; }, false);
+document.getElementById('sc2').addEventListener('change', () => {
+	scMode = 1;
+	if (!scButton) {
+		scButton = document.createElement('button');
+		scButton.innerText = 'Válassz Fájlokat';
+		scContent.appendChild(scButton);
+	}
+	scButton.onclick = () => scIn1.click();
+}, false);
+document.getElementById('sc3').addEventListener('change', () => {
+	scMode = 2;
+	if (!scButton) {
+		scButton = document.createElement('button');
+		scButton.innerText = 'Válassz Fájlt';
+		scContent.appendChild(scButton);
+	}
+	scButton.onclick = () => scIn2.click();
+}, false);
 
 //#endregion load
 //#region game
 
 let map;
-const parseGameObject = o => new window[o.type](...o.args),
+const createScript = async f => {
+	let funcText = await new Response(f).text(), trimmed = funcText.trim(), s = '/*robot:', roboNameI = trimmed.indexOf(s),
+        roboName = roboNameI == 0 ? trimmed.substring(roboNameI + s.length, trimmed.indexOf('*/')).trim() : f.name.substring(0, f.name.lastIndexOf('.')); // TODO add more functions
+	scriptFunctions.push([eval(`(async function(r,Befejez,handleRoundEnd,Várd_meg_a_kör_végét,Lépj,Fordulj_jobbra,Fordulj_balra,Tegyél_le_egy_kavicsot,Fordulj,
+		Vegyél_fel_egy_kavicsot,Mi_van_előttem,Mi_van_alattam,toString,move,turn,turnLeft,turnRight){${funcText}})`), map.robotok.filter(o=>o.name==roboName)[0]]);
+}, scriptFunctions = [], parseGameObject = async o => o.type == 'Robot' ? await createRobot(...o.args) : new window[o.type](...o.args),
 loadMap = async () => {
 	switch (mode) {
 		case 0:
@@ -97,7 +119,16 @@ loadMap = async () => {
 				robotok: []
 			};
 			break;
-		
+		default:
+			break;
+	}
+	switch (scMode) {
+		case 1:
+			Array.from(scIn1.files).forEach(createScript);
+			break;
+		case 2:
+			createScript(scIn2.files[0]);
+			break;
 		default:
 			break;
 	}
@@ -172,6 +203,7 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 		await loadMap();
 		
 		document.documentElement.style.setProperty('--backg', 'rgb(79,79,79)');
+		document.documentElement.style.setProperty('--orange', 'rgb(255,165,0)');
 
 		document.head.removeChild(document.getElementById('st'));
 		document.body.innerHTML = `
@@ -187,13 +219,13 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 			</style>
 		<div id="panel" style="display:flex;justify-content:space-between;flex-direction:column;position:absolute;min-width:${panelSize}px;">
 			<div style="padding:10px 0 10px 10px;display:flex;flex-direction:column;">
-				<h1 style="color:darkgoldenrod;" id="map-name">Map Name</h1>
-				<div style="color:burlywood;font-size:1.5em; margin-left: 8px" id="selected">
+				<h1 style="color:var(--orange);" id="map-name">Map Name</h1>
+				<div style="color:var(--orange);font-size:1.5em; margin-left: 8px" id="selected">
 					<h3>Selected Object</h3>
 					<p id="sel-type">Type: -</p>
 					<canvas id="portrait" width="50px" height="50px" style="border:2px solid sandybrown;border-radius:4px;"></canvas>
 					<p>View JSON</p>
-					<textarea id="JSON-viewer" style="caret-color:white;background:grey;color:burlywood;border:2px solid sandybrown;border-radius:5px;outline:none;"><no element here></textarea>
+					<textarea id="JSON-viewer" style="caret-color:white;background:grey;color:var(--orange);border:2px solid sandybrown;border-radius:5px;outline:none;"><no element here></textarea>
 				</div>
 			</div>
 			<img src="start.png" id="st-button" style="padding:0;outline:none;background:none;width:fit-content;height:fit-content;margin:0 0 10px 10px;user-select:none;">
@@ -220,7 +252,7 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 		viwer.cols = noEl.length;
 		canvas.addEventListener('click', e => {
 			let gridSize = canvas.width / map.width, oldKiv = kiválaszott, oldfac = oldKiv ? oldKiv.facing : null;
-			kiválaszott = Keress(e.clientX / gridSize, e.clientY / gridSize);
+			kiválaszott = KeressTömb(e.clientX / gridSize, e.clientY / gridSize)[0];
 			if (!kiválaszott) {
 				viwer.value = noEl;
 				viwer.rows = 1;
@@ -236,12 +268,16 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 		}, false);
 		document.body.appendChild(canvas);
 
-		let st = document.getElementById('st-button')
+		let st = document.getElementById('st-button'), notStarted = true;
 		st.addEventListener('click', () => {
-			st.src = roundHandler.paused ? 'start.png' : 'pause.png';
-			roundHandler.paused = !roundHandler.paused;
-			if (!roundHandler.paused)
-				roundHandler.első = Date.now();
+			if (notStarted) {
+				notStarted = false;
+				console.log('start');
+				scriptFunctions.forEach(([f, r]) => f(r, ...r.getMethods()));
+				interval = setInterval(intervalFunc, roundLength);
+			}
+			paused = !paused;
+			st.src = paused ? 'start.png' : 'pause.png';
 		}, false);
 
 		window.addEventListener('resize', resize, false);
@@ -256,47 +292,38 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 			errored = true;
 		}
 	}
-	setTimeout(resize, 0);
+	requestAnimationFrame(resize, 0);
 };
 document.querySelector('#startButton').addEventListener('click', startListener, false);
 
-const roundHandler = {
+let round = 0, paused = true, roundLength = 500, interval;
+const intervalFunc = () => {
+	if (paused)
+		return;
+	let allFinished = true, allCompleted = true;
+	map.robotok.forEach(r => {
+		if (r.round < round)
+			allFinished = false;
+		if (!r.completed)
+			allCompleted = false;
+	});
+	if (allCompleted)
+		return;
+	if (allFinished)
+		console.log(`Round ${round}`);
+	else
+		return;
 	
-	kör: 0, első: 0, length: 500,
-	i: 0, nr: null, waitSet: false, paused: true,
-
-	next(arg) {
-		if (arg) {
-			this.waitSet = false;
-			this.i++;
-			if (this.i == map.robotok.length) {
-				this.i = 0;
-				this.kör++;
-				let tempNr = this.nr;
-				this.nr = null;
-				return tempNr - Date.now();
-			}
-			return (this.nr === null ? (this.nr = (this.első + (this.kör + 1) * this.length)) : this.nr) - Date.now();
-		} else {
-			if (this.waitSet && this.nr > Date.now())
-				return this.nr - Date.now();
-			else {
-				this.nr = Date.now() + this.length;
-				this.waitSet = true;
-				return this.length;
-			}
-		}
-	}
-
-}, awaitRoundEnd = async r => {
-	let a = roundHandler.next(true);
-	console.log(`[${r.name}] sleeping ${a} ms`);
-	await sleep(a);
-	r.round++;
-	while (roundHandler.paused || map.robotok.some(o => o !== r && !o.finished && o.round < r.round)) { // TODO fix this shiet
-		let b = roundHandler.next(false);
-		console.log(`[${r.name}] waiting ${b} ms`);
-		await sleep(b);
-	}
-}
+	let allStepped = true;
+	map.robotok.forEach(r => {
+		if (r.resolves.length)
+			r.resolves.shift()();
+		else
+			allStepped = false;
+		if (r.queue.length)
+			r.action(r.queue.shift());
+	});
+	if (allStepped)
+		round++;
+};
 //#endregion game

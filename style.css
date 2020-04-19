@@ -82,7 +82,9 @@ img {
 	}
 }
 
-button {
+a {
+	text-decoration: none;
+	color: gray;
 	background: bisque;
 	border: 3px solid salmon;
 	border-radius: 10px;
@@ -94,7 +96,7 @@ button {
 	font-size: 2em;
 }
 
-button:hover {
+a:hover {
 	background-color: rgb(189, 199, 207);
 	color: brown;
 	transition: .5s;

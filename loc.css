@@ -7,6 +7,7 @@
 :root {
 	--grey: rgb(78, 78, 78);
 	--backg: linear-gradient(rgb(221, 138, 83), rgb(62, 62, 184)) fixed;
+	--text-color: rgb(181, 185, 189);
 }
 
 ::selection {
@@ -46,7 +47,7 @@ h2 {
 	border: 3px solid var(--grey);
 	border-radius: 15px;
 	max-width: 50%;
-	color: rgb(181, 185, 189);
+	color: var(--text-color);
 }
 
 #input {
@@ -58,10 +59,10 @@ h2 {
 
 #content {
 	padding-left: 10px;
-	text-align: left;
 	display: flex;
 	flex-direction: row;
-	justify-content: flex-start;
+	justify-content: center;
+	padding-bottom: 10px;
 }
 
 #content * {
@@ -69,7 +70,7 @@ h2 {
 }
 
 #content p {
-	margin-top: 8px;
+	margin-top: 4px;
 }
 
 .in {
@@ -95,7 +96,6 @@ button {
 	padding-left: 15px;
 	padding-right: 15px;
 	outline: none;
-	margin-left: 20px;
 	font-size: 1em;
 }
 
@@ -107,4 +107,27 @@ button:hover {
 
 #startButton {
 	margin-top: 15px;
+	font-size: 1.5em;
+}
+
+#scTitle {
+	padding-top: 20px;
+	font-size: 1.8em;
+}
+
+#scriptSettings {
+	padding: 10px 0 0 10px;
+	color: var(--text-color);
+	text-align: start;
+	display: flex;
+	flex-direction: row;
+}
+
+#scriptSettings label {
+	font-size: 1em;
+}
+
+#scWrapper {
+	display: flex;
+	flex-direction: column;
 }

@@ -64,6 +64,13 @@ body {
 	border-right: solid 2px black;
 }
 
+#selCanv {
+	position: absolute;
+	display: block;
+	border-right: solid 2px black;
+	z-index: 5;
+}
+
 #panel {
 	display: flex;
 	flex-direction: column;
@@ -185,4 +192,9 @@ input[type="checkbox"] {
 	border: 1.5px solid grey;
 	border-radius: 10px;
 	width: fit-content;
+}
+
+#selection {
+	display: flex;
+	flex-direction: column;
 }
