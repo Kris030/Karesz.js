@@ -1,10 +1,8 @@
 {
 	"name": "Disco",
-	"desc": "hejejejeje",
 	"width": 30,
 	"height": 20,
-	"rules": {
-	}, "onload": "console.log('loaded')",
+	"onload": "console.log('loaded')",
 	"objs": [
 		{"type":"Wall","args":[5,1,"hsl(90,80%,50%)"]},
 		{"type":"Wall","args":[6,1,"hsl(108,80%,50%)"]},

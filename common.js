@@ -54,7 +54,6 @@ this.GameObject = class {
 
 	constructor(x, y) {
 		this.listeners = [];
-		this.textBubbles = [];
 		this.x = x;
 		this.y = y;
 	}
@@ -65,6 +64,17 @@ this.GameObject = class {
 
 	fireListeners(type) {
 		listeners.forEach(l=>{if (l.type == type) l.fire();});
+	}
+
+	Mondj(bubble, timeout, callback) {
+		this.textBubble = bubble;
+		setTimeout(() => {
+			delete this.textBubble;
+			if (callback)
+				callback();
+			drawGlobal();
+		}, timeout);
+		drawGlobal();
 	}
 
 	draw(g, s) {}
@@ -310,7 +320,7 @@ this.Robot = class extends Movable {
 	async action(a) {
 		switch (a.a) {
 			case 0: return;
-			case 1: this.move(); console.log('move'); return;
+			case 1: this.move(); return;
 			case 2: this.turn(a.irány); return;
 			case 3: this.turnRight(); return;
 			case 4: this.turnLeft(); return;
@@ -493,14 +503,15 @@ this.Robot = class extends Movable {
 			()=>r.move(),
 			()=>r.turn(),
 			()=>r.turnLeft(),
-			()=>r.turnRight()
+			()=>r.turnRight(),
+			b=>r.Mondj(b)
 		];
 	}
 
 	//#endregion non player
 
 }
-Robot.factory = { // name, res, facing
+Robot.factory = {
 	createControls() {
 		let name = document.createElement('input'), facing = document.createElement('select');
 		facing.innerHTML = '<option>fel</option><option>le</option><option>jobbra</option><option>balra</option>';
@@ -513,7 +524,7 @@ Robot.factory = { // name, res, facing
 			]
 		};
 	}, async createObject(x, y, vals) {
-		return await createRobot(vals[0], x, y, ['Karesz_up.png','Karesz2.png','Karesz1.png','Karesz3.png'], vals[1], 0);
+		return await createRobot(vals[0], x, y, ['Karesz0.png','Karesz2.png','Karesz1.png','Karesz3.png'], vals[1], 0);
 	}, drawIcon(g, w, h) {
 		let img = new Image();
 		img.src = 'Karesz_up.png';

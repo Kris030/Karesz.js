@@ -98,7 +98,7 @@ const createScript = async f => {
 	let funcText = await new Response(f).text(), trimmed = funcText.trim(), s = '/*robot:', roboNameI = trimmed.indexOf(s),
         roboName = roboNameI == 0 ? trimmed.substring(roboNameI + s.length, trimmed.indexOf('*/')).trim() : f.name.substring(0, f.name.lastIndexOf('.')); // TODO add more functions
 	scriptFunctions.push([eval(`(async function(r,Befejez,handleRoundEnd,Várd_meg_a_kör_végét,Lépj,Fordulj_jobbra,Fordulj_balra,Tegyél_le_egy_kavicsot,Fordulj,
-		Vegyél_fel_egy_kavicsot,Mi_van_előttem,Mi_van_alattam,toString,move,turn,turnLeft,turnRight){${funcText}})`), map.robotok.filter(o=>o.name==roboName)[0]]);
+		Vegyél_fel_egy_kavicsot,Mi_van_előttem,Mi_van_alattam,toString,move,turn,turnLeft,turnRight,Mondj){${funcText}})`), map.robotok.filter(o=>o.name==roboName)[0]]);
 }, scriptFunctions = [], parseGameObject = async o => o.type == 'Robot' ? await createRobot(...o.args) : new window[o.type](...o.args),
 loadMap = async () => {
 	switch (mode) {
@@ -127,7 +127,7 @@ loadMap = async () => {
 			Array.from(scIn1.files).forEach(createScript);
 			break;
 		case 2:
-			createScript(scIn2.files[0]);
+			scriptFunctions.push(eval(`async function() {${await new Response(f).text()}}`));
 			break;
 		default:
 			break;
@@ -136,11 +136,16 @@ loadMap = async () => {
 
 let canvas, panel, ctx, kiválaszott, viwer, pctx, prt;
 const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
-	ctx = canvas.getContext('2d');
 	let gridSize = canvas.clientWidth / map.width;
-	ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
+	ctx.globalAlpha = 1;
 	ctx.lineWidth = 1;
 	ctx.strokeStyle = 'black';
+	ctx.fillStyle = 'white';
+	ctx.imageSmoothingEnabled = false;
+	ctx.direction = 'ltr';
+	ctx.filter = 'none';
+	ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 	for (let i = 1; i < map.width; i++) {
 		ctx.beginPath(); let xx = i * gridSize;
 		ctx.moveTo(xx, 0);
@@ -154,32 +159,89 @@ const noEl = '<no element there>', panelSize = 300, drawGlobal = async () => {
 		ctx.stroke();
 	}
 	map.objs.forEach(o => o.draw(ctx, gridSize));
-	/* TODO text bubbles:
-function drawBubble(ctx, x, y, w, h, radius) {
-	let r = x + w, b = y + h;
-	ctx.beginPath();
-	ctx.strokeStyle="black";
-	ctx.lineWidth="2";
-	ctx.moveTo(x+radius, y);
-	ctx.lineTo(x+radius/2, y-10);
-	ctx.lineTo(x+radius * 2, y);
-	ctx.lineTo(r-radius, y);
-	ctx.quadraticCurveTo(r, y, r, y+radius);
-	ctx.lineTo(r, y+h-radius);
-	ctx.quadraticCurveTo(r, b, r-radius, b);
-	ctx.lineTo(x+radius, b);
-	ctx.quadraticCurveTo(x, b, x, b-radius);
-	ctx.lineTo(x, y+radius);
-	ctx.quadraticCurveTo(x, y, x+radius, y);
-	ctx.stroke();
-}
-	*/
 	if (kiválaszott) {
 		ctx.strokeStyle = 'orange';
 		ctx.lineWidth = gridSize * .04;
 		ctx.strokeRect(kiválaszott.x * gridSize, kiválaszott.y * gridSize, gridSize, gridSize);
 	}
+	map.objs.forEach(o => drawBubble(ctx, o, gridSize));
 	setSelJSON();
+}, drawBubble = (ctx, o, gridSize) => {
+	let bubble = o.textBubble;
+	if (!bubble || !bubble.text)
+		return;
+	
+	ctx.font = bubble.font || '50px sans-serif';
+	let lines = bubble.text.split('\n'), wrap = bubble.wrap || true, tmWidth = 0, padding;
+
+	if (bubble.padding) {
+		while (bubble.padding.length < 4)
+			bubble.padding.push(0);
+		padding = bubble.padding;
+	} else
+		padding = [5, 5, 5, 10];
+
+	if (wrap && bubble.width !== undefined) {
+		if (bubble.width == 0)
+			lines = bubble.text.split('');
+		else {
+			for (let i = 0; i < lines.length; i++) {
+				const s = lines[i];
+				if (s.trim().length == 0 || s.length == 1)
+					continue;
+				let lW = ctx.measureText(s).width;
+				if (lW > bubble.width) {
+					let splitIndex = s.length + 1;
+					while (splitIndex >= 0 && ctx.measureText(s.substring(0, splitIndex)).width + padding[3] > bubble.width)
+						splitIndex--;
+					if (splitIndex < 0)
+						splitIndex = 0;
+					lines[i] = s.substring(0, splitIndex + 1);
+					lines.splice(i + 1, 0, s.substring(splitIndex + 1, s.length - 1));
+				}
+			}
+		}
+	}
+
+	for (let i = 0, ls = lines.length; i < ls; i++) {
+		let m = ctx.measureText(lines[i]).width;
+		if (m > tmWidth)
+			tmWidth = m;
+	}
+	let lineSpacing = bubble.lineSpacing || 5, w = (bubble.width || tmWidth) + padding[1] + padding[3],
+		x = o.x * gridSize + gridSize * .1, objY = (o.y + 1) * gridSize, y = objY + 5,
+		tH = ctx.measureText(bubble.text).actualBoundingBoxAscent,
+		h = lines.length * (tH + lineSpacing) + padding[0] + padding[2],
+		radius = bubble.radius || 10;
+
+	ctx.strokeStyle = bubble.outline || 'black';
+	ctx.fillStyle = bubble.backgroundStyle || 'white';
+	ctx.lineWidth = gridSize * .02;
+	ctx.globalAlpha = bubble.alpha || .75;
+
+	let r = x + w, b = y + h;
+
+	if (objY + h > canvas.height)
+		ctx.translate(0, -gridSize - h);
+	
+	ctx.beginPath();
+	ctx.moveTo(x+radius, y);
+	ctx.lineTo(r-radius, y);
+	ctx.quadraticCurveTo(r, y, r, y+radius);
+	ctx.lineTo(r, y + h - radius);
+	ctx.quadraticCurveTo(r, b, r - radius, b);
+	ctx.lineTo(x + radius, b);
+	ctx.quadraticCurveTo(x, b, x, b - radius);
+	ctx.lineTo(x, y + radius);
+	ctx.quadraticCurveTo(x, y, x + radius, y);
+	ctx.fill();
+	ctx.stroke();
+
+	ctx.fillStyle = bubble.textStyle || 'black';
+	
+	for (let i = 0, tS = tH + lineSpacing, px = x + padding[1], py = padding[0] + y; i < lines.length; i++)
+		ctx.fillText(lines[i], px, py + (i + 1) * tS);
+
 }, resize = () => {
 	let oldW = canvas.width, w = window.innerWidth - panelSize, h = map.height / map.width * w;
 	if (h > window.innerHeight) {
@@ -192,8 +254,9 @@ function drawBubble(ctx, x, y, w, h, radius) {
 		panel.style.width = panelSize + 'px';
 	if (oldW == w)
 		return;
+	panel.style.height = Math.min(h, window.innerHeight) + 'px';
 	panel.style.left = w + 'px';
-	panel.style.top = '0px'; panel.style.height = h + 'px';
+	panel.style.top = '0px';
 
 	canvas.style.top = '0px'; canvas.style.left = '0px';
 	canvas.width = w; canvas.height = h;
@@ -204,10 +267,21 @@ function drawBubble(ctx, x, y, w, h, radius) {
 	pctx.fillStyle = 'gray';
 	pctx.fillRect(0, 0, prt.width, prt.width);
 	if (kiválaszott) {
-		let str = JSON.stringify(kiválaszott, (key, val)=>key=='facing'?val.valueOf():val, 2), arr = str.split('\n'), max = 0;
-		arr.forEach(e=>{if(e.length>max)max=e.length;});
+		let str = JSON.stringify(kiválaszott, function(key, val) {
+			if (this instanceof Robot) {
+				if (key == 'facing')
+					return val.valueOf();
+				else if (key == 'res')
+					return val.map(i => i.src);
+			}
+			return val;
+		}, 2), arr = str.split('\n'), max = 0;
+		arr.forEach(e => {
+			if (e.length > max)
+				max = e.length;
+		});
 		viwer.rows = arr.length;
-		viwer.cols = Math.min(max, 37);
+		viwer.cols = Math.min(max, 38);
 		viwer.value = str;
 		let gs = -prt.width;
 		pctx.translate(gs * kiválaszott.x, gs * kiválaszott.y);
@@ -230,26 +304,32 @@ function drawBubble(ctx, x, y, w, h, radius) {
 		<style>
 			body {
 				display:block;
-				padding:0; margin:0;
+				padding:0;margin:0;
 				background:var(--backg);
 				width:100vw; height:100vh;
 				overflow:hidden;
+				color:var(--orange);
 			}
-			::selection{color: red; background: white;}
+			h1 {margin-block-end:0;}
+			h3 {margin-block-end:0;}
+			p {margin-block-end:5px;}
+			::selection{color:red;background:white;}
 			</style>
 		<div id="panel" style="display:flex;justify-content:space-between;flex-direction:column;position:absolute;min-width:${panelSize}px;">
-			<div style="padding:10px 0 10px 10px;display:flex;flex-direction:column;">
-				<h1 style="color:var(--orange);" id="map-name">Map Name</h1>
-				<div style="color:var(--orange);font-size:1.5em; margin-left: 8px" id="selected">
+			<div style="padding:0 0 0 10px;display:flex;flex-direction:column;">
+				<h1 id="map-name"></h1>
+				<h1 style="font-size:1.3em;padding-left:5px;margin-block-start:0;" id="round-display">Round: 0</h1>
+				<div style="font-size:1.5em;margin-left:8px" id="selected">
 					<h3>Selected Object</h3>
 					<p id="sel-type">Type: -</p>
 					<canvas id="portrait" width="50px" height="50px" style="border:2px solid sandybrown;border-radius:4px;"></canvas>
 					<p>View JSON</p>
-					<textarea id="JSON-viewer" style="caret-color:white;background:grey;color:var(--orange);border:2px solid sandybrown;border-radius:5px;outline:none;"><no element here></textarea>
+					<textarea id="JSON-viewer" style="color:var(--orange);max-height:400px;caret-color:white;background:grey;border:2px solid sandybrown;border-radius:5px;outline:none;"><no element here></textarea>
 				</div>
 			</div>
 			<img src="start.png" id="st-button" style="padding:0;outline:none;background:none;width:fit-content;height:fit-content;margin:0 0 10px 10px;user-select:none;">
 		</div>`;
+		document.getElementById('map-name').innerText = map.name || 'Unnamed Map';
 
 		// Preload pause icon
 		new Image().src = 'pause.png';
@@ -257,6 +337,7 @@ function drawBubble(ctx, x, y, w, h, radius) {
 		panel = document.getElementById('panel');
 		canvas = document.createElement('canvas');
 		canvas.style.cssText = 'position:absolute;display:block;background:white;border-right:solid 2px black;';
+		ctx = canvas.getContext('2d');
 
 		viwer = document.getElementById('JSON-viewer');
 		prt = document.getElementById('portrait');
@@ -277,6 +358,7 @@ function drawBubble(ctx, x, y, w, h, radius) {
 				viwer.value = noEl;
 				viwer.rows = 1;
 				viwer.cols = noEl.length;
+				setSelJSON();
 				selType.innerText = 'Type: -';
 				if (kiválaszott !== oldKiv)
 					drawGlobal();
@@ -292,8 +374,11 @@ function drawBubble(ctx, x, y, w, h, radius) {
 		st.addEventListener('click', () => {
 			if (notStarted) {
 				notStarted = false;
-				console.log('start');
-				scriptFunctions.forEach(([f, r]) => f(r, ...r.getMethods()));
+				rDisp = document.getElementById('round-display');
+				if (scMode == 2)
+					scriptFunctions[0]();
+				else
+					scriptFunctions.forEach(([f, r]) => f(r, ...r.getMethods()));
 				interval = setInterval(intervalFunc, roundLength);
 			}
 			paused = !paused;
@@ -316,7 +401,7 @@ function drawBubble(ctx, x, y, w, h, radius) {
 };
 document.querySelector('#startButton').addEventListener('click', startListener, false);
 
-let round = 0, paused = true, roundLength = 500, interval;
+let round = 0, paused = true, roundLength = 500, interval, rDisp;
 const intervalFunc = () => {
 	if (paused)
 		return;
@@ -324,13 +409,15 @@ const intervalFunc = () => {
 	map.robotok.forEach(r => {
 		if (r.round < round)
 			allFinished = false;
-		if (!r.completed)
+		if (!r.finished)
 			allCompleted = false;
 	});
-	if (allCompleted)
+	if (allCompleted) {
+		rDisp.innerText = `All done`;
 		return;
+	}
 	if (allFinished)
-		console.log(`Round ${round}`);
+		rDisp.innerText = `Round ${round}`;
 	else
 		return;
 	
