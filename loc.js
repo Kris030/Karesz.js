@@ -434,3 +434,4 @@ const intervalFunc = () => {
 		round++;
 };
 //#endregion game
+console.log('asd');
